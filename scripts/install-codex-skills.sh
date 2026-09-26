@@ -14,22 +14,17 @@ EXPECTED_SKILLS=(
   dev-fix
   dev-verify
   dev-code-review
-  dev-commit-writer
   dev-finish
-  dev-design-context
-  dev-grill-docs
-  dev-image-to-code
-  swagger-doc-skill
 )
 
 usage() {
   cat <<'EOF'
 Usage: bash scripts/install-codex-skills.sh [--upgrade] [--target-dir DIR]
 
-Installs dev-skills into Codex's skills directory.
+Copy Agent Dev Workflow skills into Codex's skills directory.
 
 Options:
-  --upgrade        Pull the latest repo first, then resync the skills.
+  --upgrade        Pull the current repository with --ff-only, then resync.
   --target-dir DIR Install into DIR instead of ${CODEX_HOME:-$HOME/.codex}/skills.
   -h, --help       Show this help.
 EOF
@@ -71,12 +66,12 @@ fi
 mkdir -p "$TARGET_DIR"
 SOURCE_REALPATH="$(cd "$SOURCE_DIR" && pwd -P)"
 TARGET_REALPATH="$(cd "$TARGET_DIR" && pwd -P)"
-[[ "$TARGET_REALPATH" != "$SOURCE_REALPATH" ]] || fail "target directory must not be the repo skills directory"
+[[ "$SOURCE_REALPATH" != "$TARGET_REALPATH" ]] || fail "target directory must not be the repository skills directory"
 
 for skill in "${EXPECTED_SKILLS[@]}"; do
-  [[ -d "$SOURCE_DIR/$skill" ]] || fail "missing source skill: $skill"
+  [[ -f "$SOURCE_DIR/$skill/SKILL.md" ]] || fail "missing source skill: $skill"
   rm -rf "$TARGET_DIR/$skill"
   cp -R "$SOURCE_DIR/$skill" "$TARGET_DIR/"
 done
 
-echo "Synced ${#EXPECTED_SKILLS[@]} dev-skills to $TARGET_DIR"
+echo "Synced ${#EXPECTED_SKILLS[@]} Agent Dev Workflow skills to $TARGET_DIR"

@@ -1,52 +1,65 @@
 ---
 name: dev-finish
-description: Complete an implemented development branch through an authorized local commit/merge, push and PR, preservation, or discard. Inspect scope and applicable verification before delivery; respect an already selected action without repeating a menu. Does not replace implementation or review.
+description: "Perform an explicitly authorized Git delivery action for verified/reviewed work: local commit, push and PR, merge, preserve, or discard. Inspect exact scope and current evidence first. Permission for one action does not imply permission for another."
 ---
 
 # Dev Finish
 
-Complete the delivery action the user requested, using the actual Git state and evidence. Permission for one action does not imply permission for unrelated publication or cleanup.
+Deliver only what the user authorized.
 
-## Load baseline
-
-Read [references/dev-baseline.md](references/dev-baseline.md) before execution. Resolve paths relative to this skill directory.
+Read `references/dev-baseline.md`.
 
 ## Preflight
 
-Inspect the repository root, branch or detached HEAD, current commit, working-tree/index status, remotes, upstream, and worktrees as relevant. Preserve unrelated changes and partial staging. Do not stash, reset, or discard user work to obtain a clean tree.
+Inspect the actual repository root, branch or detached HEAD, current commit, index, working tree, remotes, upstream, and worktrees as relevant.
 
-Verify the files or commit to be delivered have appropriate passing checks and any required review. Existing evidence is usable when it still covers the exact relevant state; rerun affected checks after changes. `dev-verify` and `dev-code-review` may provide evidence when installed, but equivalent checks work without them.
+Preserve unrelated work and partial staging. Do not stash, reset, or discard user changes just to obtain a clean tree.
 
-Read the user's requested destination and existing authorization. If the action is already clear, prepare and execute it without another menu. If no finish action is specified, finish preflight first and ask for the single missing decision. Missing destination or ambiguous destructive scope requires clarification; a dirty tree alone does not.
+Confirm that the exact files or commit being delivered have sufficient verification and review evidence for the requested action. Reuse evidence when it still covers the same state.
 
-Failures block claims of verified delivery and any repository-required gate. Resolve failures within authorized scope where possible. Preserving a branch or making an explicitly requested draft PR with disclosed failures may still be appropriate; do not label that state ready to merge.
+If the requested finish action is already clear, do not present another menu. Ask only for a genuinely missing destination, destructive scope, or other material choice.
 
-## Commit and merge
+## Commit
 
-For a requested local commit, inspect the exact intended staged diff and use a message based on those changes. Stage only authorized files or hunks; preserve unrelated index entries. When an unrelated staged change prevents forming the requested commit safely, clarify scope or use a safe isolated approach. A request for a commit does not authorize a push.
+For a requested commit:
 
-For a local merge, determine the target from the user's request, upstream/default-branch metadata, and repository conventions. A successful `merge-base` against `main` does not identify the intended destination by itself. Verify the target checkout/worktree is suitable, perform the authorized merge, and check the merged result. Resolve conflicts within scope; do not choose away another contributor's changes without understanding them.
+- inspect the exact staged snapshot;
+- stage only authorized files or hunks;
+- write the message from the actual change and repository history;
+- preserve unrelated index entries.
 
-Do not automatically `pull` or push the target as a hidden merge substep. Fetch when remote freshness is needed and permitted, then integrate only the intended changes. A merge alone does not authorize deleting branches or worktrees.
+A commit request does not authorize a push.
 
-## Push and PR
+## Push and pull request
 
-Confirm the requested remote, source branch, and PR base from observed repository state. Check for an existing PR before creating a duplicate. Review the exact commits to be published, then push and create/update the PR when that action is authorized. Never force-push by default.
+Confirm remote, source branch, and base branch from repository state and the user's request.
 
-A requested PR normally authorizes the push needed to publish its branch; prior authorization remains valid. Use the repository's PR template, or a concise problem/change/validation description. Disclose unresolved test or review failures and use draft status when warranted. Keep the worktree available for follow-up review.
+Check for an existing pull request before creating a duplicate. Push only the intended commits. Do not force-push by default.
 
-## Preserve or discard
+A request to create a PR normally includes the push required to publish that branch, unless the user explicitly limits it.
 
-For preservation, report branch/commit and path without changing them.
+Use a concise PR description: problem, change, verification, and known limits.
 
-Before destructive cleanup, establish the exact branch, commits, path, uncommitted contents, and ownership. A vague "finish" request does not authorize deletion. If the user has already explicitly authorized discarding that exact work, do not require a magic confirmation word; otherwise present the concrete loss and request confirmation before deletion.
+## Merge, preserve, or discard
 
-Clean up only task-owned branches/worktrees covered by authorization, after confirming required work is merged or intentionally discarded. Directory name alone does not prove ownership. Never remove a platform-managed workspace as routine cleanup; preserve it if ownership or external lifecycle requirements are unclear.
+For merge, verify the intended target and the exact commits. Do not infer the destination only from a merge base.
 
-## Completion
+For preserve, report the branch/commit/path and leave it intact.
 
-Report the result appropriate to the action: commit hash, merge target, PR link, retained path, or exact discarded scope. Include relevant verification and any unfinished step. A tool command being launched or a PR existing is not evidence that merge or CI completed.
+For discard or cleanup, identify the exact data that will be lost and confirm that the user authorized that specific destructive scope. Delete only task-owned branches/worktrees after confirming they are merged or intentionally abandoned.
 
-## Multi-Agent Note
+## Report
 
-The main agent controls Git mutations and user-facing delivery. Independent agents may review diffs or verify snapshots when delegation is permitted, but they do not independently push, merge, or delete shared work. Use `docs/multi-agent-policy.md` when this repository is available; standalone installations use the same ownership and authorization rules above.
+Return the concrete result:
+
+- commit hash;
+- PR link;
+- merge target;
+- preserved branch/path; or
+- exact discarded scope.
+
+Include relevant verification and any unfinished gate.
+
+## Multi-agent use
+
+Keep Git mutations with the main agent. Verifiers and reviewers may work in separate read-only lanes, but workers do not independently push, merge, or delete shared work.

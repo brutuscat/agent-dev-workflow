@@ -1,48 +1,58 @@
 ---
 name: dev-tdd
-description: Implement scoped behavior changes using meaningful tests before code where practical. Use for features, behavior-preserving refactors, and direct fixes with a known cause; use dev-fix for bug investigation. Documentation, formatting, and asset-only edits do not need this coding workflow.
+description: "Implement a known scoped behavior with focused tests before production code when practical. Use for features, small behavior changes, and behavior-preserving refactors. Use dev-fix when the cause of broken behavior still needs investigation. Do not invent tests for documentation or formatting-only edits."
 ---
 
 # Dev TDD
 
-Use tests to establish the behavior being implemented, then make the smallest coherent change. Honor an explicit request for strict TDD; otherwise choose verification proportional to the behavior and risk.
+Use tests to prove the behavior, then make the smallest coherent change.
 
-## Load baseline
-
-Read [references/dev-baseline.md](references/dev-baseline.md) before execution. Resolve paths relative to this skill directory.
+Read `references/dev-baseline.md`.
 
 ## Establish the behavior
 
-- Read the affected implementation, nearby tests, and project test commands before choosing a test boundary.
-- Use the current request and relevant SDD spec/plan as the contract. Existing artifacts may live in `.claude/artifacts/designs/` or `.claude/artifacts/plans/`; read only those connected to this task. The user's latest correction takes precedence over an older artifact.
-- State expected observable behavior briefly. Ask only when a missing decision materially changes the implementation and cannot be inferred from the project.
-- Inspect repository root, branch, working tree, and index before edits. Preserve unrelated changes, partially staged files, and explicit exclusions. A dirty tree alone is not a blocker.
+Read the affected code, nearby tests, project test commands, and the relevant request/spec/plan.
 
-## Choose the test strategy
+State the observable behavior briefly. Ask only if a missing decision materially changes implementation and cannot be resolved from existing project evidence.
 
-For new behavior or a known regression, prefer a focused test that fails on the unchanged implementation. Exercise the real boundary and assert outputs or state transitions; avoid assertions that mirror implementation details.
+Inspect Git state before edits when it matters. Preserve unrelated staged, unstaged, and untracked work.
 
-For behavior-preserving refactors, passing characterization tests on the original implementation are valid evidence. Add coverage for relevant gaps, then keep those tests passing during the refactor.
+## Choose the proof
 
-Low-impact reversible changes need no new test if it would only restate the edit. Use an existing check or direct inspection where sufficient. Respect a user's request to skip TDD without a second permission exchange; run appropriate remaining checks and state the resulting evidence limit. Never call post-implementation tests a completed red/green cycle.
+For new behavior or a known regression, prefer a focused test that fails on the unchanged implementation for the expected reason.
 
-## Implement and verify
+For a behavior-preserving refactor, existing or new characterization tests may already pass before the change. Keep them passing through the refactor.
 
-1. Run the focused test. For new behavior, confirm failure comes from the missing behavior, not a broken fixture, import, or environment. If a required symbol does not yet exist, establish that the failure is exactly that missing contract; it does not yet prove runtime behavior.
-2. Implement the smallest coherent behavior change. Keep assertions intact unless investigation shows the test contradicts the contract.
-3. Run the same test and inspect the result. Refactor only what the task needs, and rerun affected checks after further edits.
-4. Expand checks according to impact: adjacent paths for a local change, integration and project checks for shared interfaces, persistence, authentication, or other high-risk behavior. Do not repeat sufficient checks without a new change or unresolved concern.
+Do not add a test when it would only restate a typo, formatting change, asset replacement, or another low-risk edit. Use the smallest meaningful check instead.
 
-A second reversal of the fix is optional when the original red result already proves the test detects the defect. If additional mutation testing is needed, isolate it in a temporary copy and preserve the regression test; never use a blanket stash or reset on the shared working tree.
+## Implement
 
-## Completion and handoff
+1. Run the focused proof.
+2. Confirm the failure is caused by the missing behavior, not a broken fixture or environment.
+3. Implement the smallest coherent change.
+4. Run the same proof again.
+5. Expand checks only as required by blast radius or project gates.
+6. Refactor only what the task needs, then rerun affected checks.
 
-Report the changed behavior, commands and observed results, and material limitations. Map evidence to relevant SDD acceptance criteria when present. Use `dev-verify` if available for completion evidence and `dev-code-review` when review is requested or required; their names do not force a new workflow or extra user turn. Without those skills, perform equivalent scoped checks directly. Commit, PR, and branch operations require the corresponding user authorization.
+Do not weaken a correct test to make the implementation pass.
 
-## Multi-Agent Profile
+If strict red/green cannot be demonstrated because the code was already changed, say so. Post-implementation tests are useful evidence, but they are not a historical red/green cycle.
 
-Recommended agent_type: worker
+## Handoff
 
-Delegate only when permitted and a bounded behavior can be implemented independently. Each worker owns explicit files or modules and reports its source requirement, changed files, test evidence, and limitations. Keep concurrent changes and index state intact. A reviewer or verifier evaluates the resulting implementation in a separate pass without inheriting its conclusions as proof.
+Report:
 
-When installed from this repository, `docs/multi-agent-policy.md` provides additional coordination guidance if available. Standalone installations use the ownership and evidence rules above.
+- behavior implemented;
+- changed files;
+- commands and observed results;
+- important limitations or unverified boundaries.
+
+Map evidence to `AC-*` identifiers when they exist.
+
+No commit, push, merge, or destructive cleanup is implied by implementation.
+
+## Multi-agent use
+
+Delegate only a bounded implementation with explicit file ownership. Parallel workers must have disjoint write scopes.
+
+A worker returns changed files and raw verification results. A later verifier or reviewer evaluates the final integrated state rather than trusting the worker's summary.
