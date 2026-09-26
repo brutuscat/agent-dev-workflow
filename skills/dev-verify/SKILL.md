@@ -1,52 +1,58 @@
 ---
 name: dev-verify
-description: Verify implemented changes before claiming they are complete, fixed, passing, or ready for delivery. Match checks to requested behavior and risk, inspect current evidence, and report limits. Use for completion checks, not general factual answers or a replacement for code review.
+description: "Verify implemented work before claiming it is complete, fixed, passing, or ready. Match evidence to the requested behavior and risk, inspect actual command results, and state missing proof. Verification is read-only unless the user explicitly reassigns implementation work."
 ---
 
 # Dev Verify
 
-Make completion claims no broader than the evidence. This workflow verifies behavior and artifacts; it does not authorize commits, publishing, merge, or cleanup.
+Make the completion claim no broader than the evidence.
 
-## Load baseline
+Read `references/dev-baseline.md`.
 
-Read [references/dev-baseline.md](references/dev-baseline.md) before execution. Resolve paths relative to this skill directory.
+## Define the claim
 
-## Choose evidence
+Start from the request and relevant spec, plan, or fix record. Identify what must be true and the smallest sufficient proof.
 
-Identify what the user expects to be true and the smallest sufficient proof. Use project commands and conventions; inspect their actual scope before relying on their names.
+Examples:
 
-| Claim | Relevant proof |
+| Claim | Useful proof |
 |---|---|
-| Behavior implemented | Tests or direct checks of observable acceptance criteria |
+| Behavior implemented | Test or direct check of the acceptance criteria |
 | Bug fixed | Original reproduction or faithful regression passes |
-| Regression detects the defect | Observed failure on original behavior, or isolated mutation proof |
-| Refactor preserves behavior | Relevant characterization tests pass before and after |
-| Build/lint succeeds | Corresponding command completes successfully |
-| UI works | Relevant rendered states and interactions, with viewport/device scope stated |
-| Skill/document updated | Structure/link checks plus review of changed instructions/content |
+| Refactor preserved behavior | Relevant characterization tests pass |
+| Build/lint succeeds | The actual project command completes successfully |
+| Browser/device behavior works | The relevant rendered state and interaction on that environment |
+| Docs/skill changed correctly | Structure/link checks plus content review |
 
-Use focused checks for local changes. Broaden for shared contracts, state transitions, persistence, integrations, security, or project-required gates. Do not add tests that merely mirror reversible low-impact edits. A parser or keyword check validates structure, not instruction quality or system behavior.
+Use focused checks for local changes and broader checks for shared contracts or high-risk boundaries.
 
 ## Run and inspect
 
-- Use fresh evidence from the final relevant file state. Evidence already produced and inspected during the task remains usable if the tested inputs, dependencies, and environment have not materially changed; do not rerun solely because a new message or handoff occurred.
-- Record exact commands, exit status, and meaningful output. Inspect failures, skipped tests, and warnings that affect the claim. A command being started is not evidence of completion.
-- Keep verification read-only with respect to source and the Git index. Run tools that generate artifacts in an isolated output location where needed. Do not fix code in an independent verification lane unless explicitly reassigned.
-- A worker's summary is not enough: inspect its output and relevant artifacts, or independently reproduce the critical check. Scale repeated verification to remaining uncertainty.
-- When a check fails, distinguish a regression from a pre-existing/environmental failure using evidence. Continue authorized corrective work in the appropriate lane, then rerun affected checks. Do not quietly waive a required failure.
+Use evidence from the final relevant state.
 
-Unavailable hardware, credentials, production access, or test tooling limits the claim. Complete all feasible checks and report missing proof without presenting a local substitute as equivalent.
+Record exact commands, exit status, and meaningful output. Inspect failures, skips, and warnings that change the claim.
 
-## SDD alignment and completion
+Do not treat a worker's summary as proof without inspecting the relevant output or rerunning the critical check.
 
-Use the current request and relevant existing SDD artifacts as acceptance criteria. If present, `.claude/artifacts/{designs,plans,fixes}/` may contain the source contract; select by actual task/file relevance, not the number of artifacts. Later user corrections override stale artifacts.
+Keep verification read-only with respect to source and Git staging. If a problem needs a code change, report it and return the task to an implementation lane unless the user explicitly asks the verifier to fix it.
 
-For substantial work, map requirements to evidence and list missing coverage. Small changes need only a short verification statement. Report what changed, which checks passed or failed, and material residual limits; do not force a fixed checklist into every response.
+Unavailable hardware, credentials, services, or tooling limit the claim. Finish feasible checks and state the missing gate.
 
-Verification does not substitute for independent code review. A `READY` review is not proof that tests ran, and passing tests do not prove every review concern resolved. Use `dev-code-review` when available and required, or perform the equivalent independent review.
+## Report
 
-## Multi-Agent Profile
+For small work, a short result is enough.
 
-Recommended agent_type: worker
+For substantial work, map each important requirement to evidence and list gaps. Distinguish:
 
-When delegation is permitted, give the verifier the current task contract, change scope, and raw artifacts. The verifier evaluates evidence independently and reports claims checked, commands/results, and limitations without changing source or staging files. Follow `docs/multi-agent-policy.md` if this repository is available; these rules also apply to standalone installations.
+- passed evidence;
+- failed evidence;
+- not-run evidence and why;
+- residual risk.
+
+Verification does not replace code review and does not authorize Git delivery.
+
+## Multi-agent use
+
+This is a strong read-only delegation target. Give the verifier the current task contract, exact snapshot/scope, and required claims.
+
+A genuinely separate verifier is independent. A role switch in the author's context is a self-check and should be described that way.

@@ -1,50 +1,29 @@
 # Dev Baseline
 
-首次使用本仓库 skill 时读取本文件;同一任务已加载且内容未变时复用,不必按阶段重读。以下四条原则贯穿工作,具体流程按任务风险选择。
+These rules apply to every skill.
 
-> 本文件是仓库根目录 `/references/dev-baseline.md` 的**编辑源**。同样内容会复制到每个 skill 的 `skills/<skill>/references/dev-baseline.md`,以保证 skill 单独安装时仍自包含。**修改时改根目录版本,然后同步到所有 skill 副本**。
+This file is the editing source. Keep each `skills/<skill>/references/dev-baseline.md` copy identical so a skill remains self-contained when installed alone.
 
----
+## 1. Do not guess material decisions
 
-## 1. 不假设(Don't Assume)
+Read the request, prior decisions, relevant code, tests, and available tools before asking questions.
 
-- **先查证再提问** —— 从当前请求、已确认决策、邻近代码和可用工具找答案;不要让用户重复提供已知信息。
-- **只阻塞关键缺口** —— 缺失信息会改变业务含义、公开契约、授权范围或导致难以撤销的操作时,问清后再做依赖该答案的工作。其他独立工作继续。
-- **低风险选择可自主完成** —— 沿用项目模式处理可逆的实现细节,说明影响结果的假设。不要把推断、旧记录或未运行的检查说成事实。
+Ask only when missing information changes user-visible behavior, a public contract, authorization, destructive scope, or another hard-to-reverse choice. Make low-risk reversible choices from project conventions and state assumptions that affect the result.
 
-例如同模块已统一使用 GraphQL 时直接沿用;若“导出”可能意味着普通用户下载或管理员批量访问他人数据,先明确权限与范围。
+## 2. Keep the change small
 
----
+Do only what the task needs. Reuse existing patterns before adding abstractions, dependencies, configuration, or future-facing flexibility.
 
-## 2. 最小代码(Simplicity First)
+Scale process to risk. A typo does not need a design document. A migration or authorization change may.
 
-- **没要求的不做** —— 不加未被请求的灵活性、可配置性、「未来扩展」。
-- **抽象要有当前收益** —— 复用项目已有组件和工具;新抽象应减少实际复杂度、保护边界或提高可测性,不以调用次数或行数作硬门槛。
-- **流程按风险伸缩** —— 清楚的小改动直接实施和检查;复杂改动才增加方案、持久化文档或分工。用户只要分析、方案或 review 时保持对应模式。
+## 3. Preserve existing work
 
----
+Inspect repository, branch, working tree, and index before writes when Git state matters.
 
-## 3. 外科手术式改动(Surgical Changes)
+Do not stash, reset, overwrite, reformat, or discard unrelated work. Limit edits to the requested scope and keep every changed line explainable from the task.
 
-- **只动必须动的** —— 不顺手「优化」邻近代码、注释、格式、import 排序。
-- **不重构没坏的** —— 即使你觉得旧代码丑,本次任务没让你改它就别动。
-- **每行变更可追溯** —— diff 里每一行都能直接关联到用户的原始请求。
+## 4. Prove what you claim
 
-先确认实际仓库、分支、working tree 和 index 范围。保留用户已有改动;dirty 本身不是停止理由,只有无法确定修改归属或目标时才问。发现邻近问题可报告,本次只处理完成目标所必需的部分。
+Choose checks that demonstrate the requested behavior on the final relevant state.
 
----
-
-## 4. 可验证的成功标准(Verifiable Success Criteria)
-
-- 用用户要求和已有契约定义完成标准,选择能证明行为的检查;风险越高、影响面越大,证据越充分。
-- 行为修复优先证明原问题失败、修复后通过;文档和低影响改动用对应检查,不为了流程制造测试。
-- 在最终改动上取得验证结果。没有新改动、失败或未决风险时复用本次任务的有效证据,不为重复报告重跑。
-- 明确区分静态检查、单测、模拟环境和真实服务/设备证据。报告失败、跳过、不可用的验证及其影响;工具或子 agent 的成功摘要不能替代实际输出。
-
----
-
-## 用法
-
-每个 skill 从自己的安装目录解析 `references/dev-baseline.md`,只按需要读取其它参考文件。消费项目已有文档路径时沿用;仓库文档不存在时使用 skill 内的自包含规则。
-
-遵守运行环境的指令优先级。用户明确目标、限制和已有授权优先于 skill 的默认流程;已授权的必要步骤继续执行,不重复索取确认。新增外部动作或难以撤销的操作仍须有对应授权。局部规则只细化任务约束,不得把普通偏好变成额外审批。
+Report exact commands and meaningful results. Distinguish static checks, unit tests, simulations, browsers/devices, staging, and production evidence. If a required check cannot run, state the missing proof and narrow the claim.

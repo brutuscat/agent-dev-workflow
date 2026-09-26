@@ -4,11 +4,5 @@
 .idea/
 *.swp
 *~
-
-.claude/artifacts/
-.claude/settings.local.json
-.omc/
-.superpowers/
-
 node_modules/
 *.log
