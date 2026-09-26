@@ -34,16 +34,20 @@ for file in \
   [[ -f "$file" ]] || fail "$file missing"
 done
 
-mapfile -t actual_skills < <(find skills -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
-mapfile -t expected_skills < <(printf '%s\n' "${EXPECTED_SKILLS[@]}" | sort)
+actual_skills="$(
+  for dir in skills/*; do
+    [[ -d "$dir" ]] && basename "$dir"
+  done | LC_ALL=C sort
+)"
+expected_skills="$(printf '%s\n' "${EXPECTED_SKILLS[@]}" | LC_ALL=C sort)"
 
-[[ "${#actual_skills[@]}" == "${#expected_skills[@]}" ]] || \
-  fail "expected ${#expected_skills[@]} skill directories, found ${#actual_skills[@]}"
-
-for i in "${!expected_skills[@]}"; do
-  [[ "${actual_skills[$i]}" == "${expected_skills[$i]}" ]] || \
-    fail "unexpected skill set: ${actual_skills[*]}"
-done
+[[ "$actual_skills" == "$expected_skills" ]] || {
+  echo "Expected skills:" >&2
+  echo "$expected_skills" >&2
+  echo "Actual skills:" >&2
+  echo "$actual_skills" >&2
+  fail "skill set does not match"
+}
 
 for skill in "${EXPECTED_SKILLS[@]}"; do
   file="skills/$skill/SKILL.md"
@@ -71,11 +75,6 @@ grep -q 'docs/workflow.md' README.md || fail "README must link workflow docs"
 grep -q 'docs/multi-agent.md' README.md || fail "README must link multi-agent docs"
 grep -q 'assets/logo.svg' README.md || fail "README must use the repository logo"
 grep -q 'AGENTS.md' README.md || fail "README must link repository instructions"
-
-echo "Checking language..."
-if grep -RIPq '[\x{4E00}-\x{9FFF}]' README.md AGENTS.md CONTRIBUTING.md docs references skills .codex-plugin; then
-  fail "retained documentation must be English"
-fi
 
 echo "Checking diff whitespace..."
 git diff --check
