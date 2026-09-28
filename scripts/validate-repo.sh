@@ -67,7 +67,7 @@ const skillsPath = path.resolve(root, plugin.skills);
 if (skillsPath !== path.join(root, 'skills')) {
   fail(`plugin skills path must resolve to the repository skills directory: ${plugin.skills}`);
 }
-if (!fs.existsSync(skillsPath) || !fs.statSync(skilsPath).isDirectory()) {
+if (!fs.existsSync(skillsPath) || !fs.statSync(skillsPath).isDirectory()) {
   fail(`plugin skills path does not resolve to a directory: ${plugin.skills}`);
 }
 
