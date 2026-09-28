@@ -4,17 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-EXPECTED_SKILLS=(
-  dev-auto
-  dev-spec
-  dev-plan
-  dev-tdd
-  dev-fix
-  dev-verify
-  dev-code-review
-  dev-finish
-)
-
 fail() {
   echo "ERROR: $*" >&2
   exit 1
@@ -30,45 +19,73 @@ for file in \
   references/calibration-cases.md \
   assets/logo.svg \
   assets/icon.svg \
-  .codex-plugin/plugin.json; do
+  .codex-plugin/plugin.json \
+  scripts/install-codex-skills.sh \
+  scripts/validate-skill-package.sh \
+  scripts/validate-repo.sh \
+  scripts/test.sh \
+  tests/test-install-codex-skills.sh \
+  tests/test-validate-repo.sh; do
   [[ -f "$file" ]] || fail "$file missing"
 done
 
-actual_skills="$(
-  for dir in skills/*; do
-    [[ -d "$dir" ]] && basename "$dir"
-  done | LC_ALL=C sort
-)"
-expected_skills="$(printf '%s\n' "${EXPECTED_SKILLS[@]}" | LC_ALL=C sort)"
-
-[[ "$actual_skills" == "$expected_skills" ]] || {
-  echo "Expected skills:" >&2
-  echo "$expected_skills" >&2
-  echo "Actual skills:" >&2
-  echo "$actual_skills" >&2
-  fail "skill set does not match"
-}
-
-for skill in "${EXPECTED_SKILLS[@]}"; do
-  file="skills/$skill/SKILL.md"
-  [[ -f "$file" ]] || fail "$file missing"
-  grep -q "^name: $skill$" "$file" || fail "$file has the wrong name"
-  grep -q '^description:' "$file" || fail "$file missing description frontmatter"
-  [[ -f "skills/$skill/references/dev-baseline.md" ]] || fail "$skill baseline copy missing"
-  cmp -s references/dev-baseline.md "skills/$skill/references/dev-baseline.md" || \
-    fail "$skill baseline copy drifted"
-done
+bash scripts/validate-skill-package.sh \
+  --skills-dir "$ROOT/skills" \
+  --baseline "$ROOT/references/dev-baseline.md"
 
 echo "Checking scripts..."
-[[ -x scripts/install-codex-skills.sh ]] || fail "installer is not executable"
-[[ -x scripts/validate-repo.sh ]] || fail "validator is not executable"
-bash -n scripts/install-codex-skills.sh
-bash -n scripts/validate-repo.sh
+for script in \
+  scripts/install-codex-skills.sh \
+  scripts/validate-skill-package.sh \
+  scripts/validate-repo.sh \
+  scripts/test.sh \
+  tests/test-install-codex-skills.sh \
+  tests/test-validate-repo.sh; do
+  [[ -x "$script" ]] || fail "$script is not executable"
+  bash -n "$script"
+done
 
 echo "Checking plugin metadata..."
-node -e 'JSON.parse(require("fs").readFileSync(".codex-plugin/plugin.json", "utf8"))'
-grep -q '"name": "agent-dev-workflow"' .codex-plugin/plugin.json || fail "plugin name is wrong"
-grep -q 'brutuscat/agent-dev-workflow' .codex-plugin/plugin.json || fail "plugin repository URL is wrong"
+node <<'NODE'
+const fs = require('fs');
+const path = require('path');
+
+const root = process.cwd();
+const pluginPath = path.join(root, '.codex-plugin', 'plugin.json');
+const plugin = JSON.parse(fs.readFileSync(pluginPath, 'utf8'));
+
+function fail(message) {
+  console.error(`ERROR: ${message}`);
+  process.exit(1);
+}
+
+if (plugin.name !== 'agent-dev-workflow') fail('plugin name is wrong');
+if (plugin.repository !== 'https://github.com/brutuscat/agent-dev-workflow') fail('plugin repository URL is wrong');
+if (typeof plugin.skills !== 'string' || plugin.skills.trim() === '') fail('plugin skills path is missing');
+
+const skillsPath = path.resolve(root, plugin.skills);
+if (skillsPath !== path.join(root, 'skills')) {
+  fail(`plugin skills path must resolve to the repository skills directory: ${plugin.skills}`);
+}
+if (!fs.existsSync(skillsPath) || !fs.statSync(skilsPath).isDirectory()) {
+  fail(`plugin skills path does not resolve to a directory: ${plugin.skills}`);
+}
+
+for (const [field, value] of [
+  ['interface.composerIcon', plugin.interface?.composerIcon],
+  ['interface.logo', plugin.interface?.logo],
+]) {
+  if (typeof value !== 'string' || value.trim() === '') fail(`${field} is missing`);
+  const resolved = path.resolve(root, value);
+  const relative = path.relative(root, resolved);
+  if (relative.startsWith(`..${path.sep}`) || relative === '..' || path.isAbsolute(relative)) {
+    fail(`${field} must stay inside the repository: ${value}`);
+  }
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+    fail(`${field} does not resolve to a file: ${value}`);
+  }
+}
+NODE
 
 echo "Checking documentation links..."
 grep -q 'docs/workflow.md' README.md || fail "README must link workflow docs"
@@ -76,7 +93,19 @@ grep -q 'docs/multi-agent.md' README.md || fail "README must link multi-agent do
 grep -q 'assets/logo.svg' README.md || fail "README must use the repository logo"
 grep -q 'AGENTS.md' README.md || fail "README must link repository instructions"
 
-echo "Checking diff whitespace..."
+echo "Checking whitespace..."
 git diff --check
+git diff --cached --check
+
+if [[ -n "${VALIDATE_BASE_SHA:-}" || -n "${VALIDATE_HEAD_SHA:-}" ]]; then
+  [[ -n "${VALIDATE_BASE_SHA:-}" && -n "${VALIDATE_HEAD_SHA:-}" ]] || \
+    fail "VALIDATE_BASE_SHA and VALIDATE_HEAD_SHA must be set together"
+
+  if [[ ! "$VALIDATE_BASE_SHA" =~ ^0+$ ]]; then
+    git cat-file -e "$VALIDATE_BASE_SHA^{commit}" 2>/dev/null || fail "validation base commit is unavailable: $VALIDATE_BASE_SHA"
+    git cat-file -e "$VALIDATE_HEAD_SHA^{commit}" 2>/dev/null || fail "validation head commit is unavailable: $VALIDATE_HEAD_SHA"
+    git diff --check "$VALIDATE_BASE_SHA...$VALIDATE_HEAD_SHA"
+  fi
+fi
 
 echo "Validation OK"

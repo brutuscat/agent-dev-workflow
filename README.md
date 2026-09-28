@@ -16,7 +16,7 @@ Agent Dev Workflow puts explicit boundaries around those decisions. Small work s
 
 ## Install
 
-Clone the repository and copy the skills into Codex:
+Clone the repository and install the skills into Codex:
 
 ```bash
 git clone https://github.com/brutuscat/agent-dev-workflow.git
@@ -24,11 +24,23 @@ cd agent-dev-workflow
 bash scripts/install-codex-skills.sh
 ```
 
-To resync after pulling a newer version:
+The installer validates and stages all eight skills before changing the target. It refuses unmanaged same-named directories and preserves the previous managed installation in a backup when replacing it.
+
+To fast-forward the current branch and install that revision:
 
 ```bash
 bash scripts/install-codex-skills.sh --upgrade
 ```
+
+`--upgrade` requires an attached Git branch with an upstream. It works from normal clones and linked worktrees.
+
+If you installed the older 13-skill package, migrate it once with:
+
+```bash
+bash scripts/install-codex-skills.sh --upgrade --migrate-legacy
+```
+
+`--migrate-legacy` explicitly takes over pre-manifest same-named directories. Retired skills and replaced content move to the backup path printed by the installer; they are not silently deleted.
 
 The installer uses `${CODEX_SKILLS_DIR}` when set, otherwise `${CODEX_HOME:-$HOME/.codex}/skills`.
 
@@ -108,7 +120,7 @@ Run the repository checks with:
 
 ```bash
 bash scripts/validate-repo.sh
-git diff --check
+bash scripts/test.sh
 ```
 
 ## License

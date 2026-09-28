@@ -11,10 +11,10 @@ Before opening a pull request:
 
 ```bash
 bash scripts/validate-repo.sh
-git diff --check
+bash scripts/test.sh
 ```
 
-If a script or executable behavior changes, run the relevant focused test too.
+If a script or executable behavior changes, add or update the focused regression case that proves it.
 
 For skill changes, prefer a concrete failure case over adding more general advice. Update `references/calibration-cases.md` when a new rule exists because an agent made a repeatable mistake.
 

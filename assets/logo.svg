@@ -9,5 +9,5 @@
   <circle cx="140" cy="146" r="34" fill="#0f766e"/>
   <path d="m123 146 11 11 24-27" fill="none" stroke="#ecfeff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="248" y="104" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="54" font-weight="700" fill="#111827">Agent Dev Workflow</text>
-  <text x="250" y="148" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="24" fill="#4b5563">small contracts · real evidence · explicit delivery</text>
+  <text x="250" y="148" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20" textLength="520" lengthAdjust="spacingAndGlyphs" fill="#4b5563">small contracts · evidence · explicit delivery</text>
 </svg>

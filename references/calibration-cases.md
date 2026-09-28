@@ -2,7 +2,7 @@
 
 Use these cases after a meaningful instruction change or model upgrade. They test decisions, not whether the agent copied a preferred heading.
 
-Give the evaluator the request, the selected skill, and only the fixture needed for the case. Record the runtime/model, skill revision, observed actions, commands, and pass/fail reason.
+These are behavioral evaluations for a real model/runtime, not deterministic shell tests. Give the evaluator the request, the selected skill, and only the fixture needed for the case. Record the runtime/model, skill revision, observed actions, commands, and pass/fail reason. Do not report a case as passed unless that model/runtime actually ran it.
 
 | Case | Request | Expected behavior |
 |---|---|---|
