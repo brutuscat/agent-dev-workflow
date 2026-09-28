@@ -102,7 +102,7 @@ MD
 run_validator() {
   local dir="$1" log="$2"
   shift 2
-  (cd "$dir" && "$@" bash scripts/validate-repo.sh) >"$log" 2>&1
+  (cd "$dir" && unset VALIDATE_BASE_SHA VALIDATE_HEAD_SHA && "$@" bash scripts/validate-repo.sh) >"$log" 2>&1
 }
 
 expect_fail() {
