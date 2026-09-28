@@ -150,7 +150,7 @@ tmp_file="$case_dir/skills/dev-tdd/SKILL.md.tmp"
 sed 's/^description:.*/description: ""/' "$case_dir/skills/dev-tdd/SKILL.md" > "$tmp_file"
 mv "$tmp_file" "$case_dir/skills/dev-tdd/SKILL.md"
 expect_fail "$case_dir" "$TMP/empty-description.log" env
-assert_contains "$TMP/empty-description.log" "empty description"
+assert_contains "$TMP/empty-description.log" "field 'description' must be a non-empty string"
 
 echo "[validate] YAML null, boolean, numeric, and comment-only descriptions fail"
 for fixture in 'null' 'false' '123' '# comment only'; do
