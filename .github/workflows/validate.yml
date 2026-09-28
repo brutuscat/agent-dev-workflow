@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Runner: ubuntu-24.04"
+          echo "Runner: ubuntu-26.04"
           echo "Node: $(node --version)"
           echo "Ruby: $(ruby --version)"
           echo "Git: $(git --version)"
