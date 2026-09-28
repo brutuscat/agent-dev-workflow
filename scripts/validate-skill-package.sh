@@ -70,14 +70,39 @@ expected_skills="$(printf '%s\n' "${EXPECTED_SKILLS[@]}" | LC_ALL=C sort)"
 }
 
 scalar_value() {
-  local value="$1"
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local normalized
 
   case "$value" in
-    \"*\") value="${value:1:${#value}-2}" ;;
-    \'*\') value="${value:1:${#value}-2}" ;;
+    \"*)
+      [[ "$value" == *\" ]] || fail "$file has malformed quoted $key frontmatter"
+      normalized="${value:1:${#value}-2}"
+      ;;
+    \'*)
+      [[ "$value" == *\' ]] || fail "$file has malformed quoted $key frontmatter"
+      normalized="${value:1:${#value}-2}"
+      ;;
+    \[*|\{*|\|*|\>*|'&'*|'*'*|'!'*)
+      fail "$file requires $key to be a scalar string"
+      ;;
+    *)
+      normalized="${value%%[[:space:]]#*}"
+      while [[ "$normalized" == *[[:space:]] ]]; do
+        normalized="${normalized%?}"
+      done
+      case "$normalized" in
+        ''|'~'|null|Null|NULL|true|True|TRUE|false|False|FALSE)
+          fail "$file requires $key to be a nonempty string"
+          ;;
+      esac
+      [[ ! "$normalized" =~ ^[-+]?[0-9]+([.][0-9]+)?$ ]] || \
+        fail "$file requires $key to be a string, not a number"
+      ;;
   esac
 
-  printf '%s\n' "$value"
+  printf '%s\n' "$normalized"
 }
 
 validate_scalar_syntax() {
@@ -175,8 +200,8 @@ validate_frontmatter() {
     fail "$file is missing description frontmatter"
   fi
 
-  name="$(scalar_value "$name_raw")"
-  description="$(scalar_value "$description_raw")"
+  name="$(scalar_value "$file" name "$name_raw")"
+  description="$(scalar_value "$file" description "$description_raw")"
 
   [[ -n "$name" ]] || fail "$file has an empty name"
   [[ -n "$description" ]] || fail "$file has an empty description"
