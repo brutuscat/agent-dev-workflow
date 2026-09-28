@@ -70,7 +70,9 @@ JSON
 ---
 name: $skill
 description: "Fixture for $skill."
-version: 1.0.0
+metadata:
+  author: example-org
+  version: "1.0"
 ---
 
 # $skill
@@ -121,7 +123,7 @@ copy_case() {
   printf '%s\n' "$dest"
 }
 
-echo "[validate] clean package with optional scalar metadata passes"
+echo "[validate] clean package with standard nested metadata passes"
 make_repo "$TMP/base"
 run_validator "$TMP/base" "$TMP/base.log" env
 assert_contains "$TMP/base.log" "Validation OK"
@@ -132,7 +134,7 @@ tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
 sed 's/^description:.*/description: "unterminated/' "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
 mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
 expect_fail "$case_dir" "$TMP/malformed.log" env
-assert_contains "$TMP/malformed.log" "malformed quoted description"
+assert_contains "$TMP/malformed.log" "invalid YAML frontmatter"
 
 echo "[validate] missing frontmatter delimiters fails"
 case_dir="$(copy_case no-frontmatter)"
@@ -157,8 +159,42 @@ for fixture in 'null' 'false' '123' '# comment only'; do
   sed "s/^description:.*/description: $fixture/" "$case_dir/skills/dev-tdd/SKILL.md" > "$tmp_file"
   mv "$tmp_file" "$case_dir/skills/dev-tdd/SKILL.md"
   expect_fail "$case_dir" "$TMP/non-string-description.log" env
-  assert_contains "$TMP/non-string-description.log" "requires description to be"
+  assert_contains "$TMP/non-string-description.log" "description"
 done
+
+echo "[validate] plain scalar containing an unescaped colon fails as malformed YAML"
+case_dir="$(copy_case colon-description)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+sed 's/^description:.*/description: foo: bar/' "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/colon-description.log" env
+assert_contains "$TMP/colon-description.log" "invalid YAML frontmatter"
+
+echo "[validate] name longer than 64 characters fails"
+case_dir="$(copy_case long-name)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+long_name="$(printf 'a%.0s' {1..65})"
+sed "s/^name:.*/name: $long_name/" "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/long-name.log" env
+assert_contains "$TMP/long-name.log" "name exceeds 64 characters"
+
+echo "[validate] description longer than 1024 characters fails"
+case_dir="$(copy_case long-description)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+long_description="$(printf 'x%.0s' {1..1025})"
+sed "s/^description:.*/description: $long_description/" "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/long-description.log" env
+assert_contains "$TMP/long-description.log" "description exceeds 1024 characters"
+
+echo "[validate] nested metadata values must remain strings"
+case_dir="$(copy_case metadata-value)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+sed 's/version: "1.0"/version: 1.0/' "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/metadata-value.log" env
+assert_contains "$TMP/metadata-value.log" "metadata"
 
 echo "[validate] missing baseline copy fails"
 case_dir="$(copy_case missing-baseline)"

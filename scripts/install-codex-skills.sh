@@ -298,14 +298,19 @@ bash "$ROOT/scripts/validate-skill-package.sh" \
 MANIFEST_PATH="$TARGET_REALPATH/.agent-dev-workflow.manifest"
 MANIFEST_STAGE="$STAGE_DIR/.agent-dev-workflow.manifest"
 REVISION="unversioned"
+SOURCE_DIRTY=0
 if [[ "$(git -C "$ROOT" rev-parse --is-inside-work-tree 2>/dev/null || true)" == "true" ]]; then
   REVISION="$(git -C "$ROOT" rev-parse HEAD)"
+  if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=all -- skills)" ]]; then
+    SOURCE_DIRTY=1
+  fi
 fi
 
 {
   printf 'format\t1\n'
   printf 'package\tagent-dev-workflow\n'
   printf 'revision\t%s\n' "$REVISION"
+  printf 'source-dirty\t%s\n' "$SOURCE_DIRTY"
   for skill in "${EXPECTED_SKILLS[@]}"; do
     printf 'skill\t%s\t%s\n' "$skill" "$(directory_digest "$STAGE_DIR/$skill")"
   done
@@ -423,7 +428,11 @@ publish_staged "$MANIFEST_STAGE" "$MANIFEST_PATH"
 ROLLBACK_NEEDED=0
 
 printf 'Installed %d Agent Dev Workflow skills to %s\n' "${#EXPECTED_SKILLS[@]}" "$TARGET_REALPATH"
-printf 'Installed revision: %s\n' "$REVISION"
+if [[ "$SOURCE_DIRTY" -eq 1 ]]; then
+  printf 'Installed revision: %s (dirty)\n' "$REVISION"
+else
+  printf 'Installed revision: %s\n' "$REVISION"
+fi
 if [[ -n "$BACKUP_DIR" ]]; then
   printf 'Previous installation preserved at: %s\n' "$BACKUP_DIR"
 fi

@@ -69,147 +69,96 @@ expected_skills="$(printf '%s\n' "${EXPECTED_SKILLS[@]}" | LC_ALL=C sort)"
   fail "skill set does not match"
 }
 
-scalar_value() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  local normalized
-
-  case "$value" in
-    \"*)
-      [[ "$value" == *\" ]] || fail "$file has malformed quoted $key frontmatter"
-      normalized="${value:1:${#value}-2}"
-      ;;
-    \'*)
-      [[ "$value" == *\' ]] || fail "$file has malformed quoted $key frontmatter"
-      normalized="${value:1:${#value}-2}"
-      ;;
-    \[*|\{*|\|*|\>*|'&'*|'*'*|'!'*)
-      fail "$file requires $key to be a scalar string"
-      ;;
-    *)
-      if [[ "$value" == \#* ]]; then
-        normalized=""
-      else
-        normalized="${value%%[[:space:]]#*}"
-      fi
-      while [[ "$normalized" == *[[:space:]] ]]; do
-        normalized="${normalized%?}"
-      done
-      case "$normalized" in
-        ''|'~'|null|Null|NULL|true|True|TRUE|false|False|FALSE)
-          fail "$file requires $key to be a nonempty string"
-          ;;
-      esac
-      [[ ! "$normalized" =~ ^[-+]?[0-9]+([.][0-9]+)?$ ]] || \
-        fail "$file requires $key to be a string, not a number"
-      ;;
-  esac
-
-  printf '%s\n' "$normalized"
-}
-
-validate_scalar_syntax() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-
-  case "$value" in
-    \"*)
-      [[ "$value" == *\" ]] || fail "$file has malformed quoted $key frontmatter"
-      ;;
-    \'*)
-      [[ "$value" == *\' ]] || fail "$file has malformed quoted $key frontmatter"
-      ;;
-    \[*|\{*)
-      case "$value" in
-        \[*\]|\{*\}) ;;
-        *) fail "$file has malformed $key frontmatter" ;;
-      esac
-      ;;
-    \|*|\>*)
-      fail "$file uses unsupported multiline $key frontmatter"
-      ;;
-    '&'*|'*'*|'!'*)
-      fail "$file uses unsupported anchored/tagged $key frontmatter"
-      ;;
-  esac
-}
-
-parse_frontmatter() {
-  local file="$1"
-  local line key value line_number=0 closed=0
-  local seen='|'
-
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line_number=$((line_number + 1))
-
-    if [[ "$line_number" -eq 1 ]]; then
-      [[ "$line" == "---" ]] || fail "$file must start with YAML frontmatter"
-      continue
-    fi
-
-    if [[ "$line" == "---" ]]; then
-      closed=1
-      break
-    fi
-
-    [[ -z "$line" || "$line" == \#* ]] && continue
-    [[ "$line" != [[:space:]]* ]] || fail "$file uses unsupported nested frontmatter at line $line_number"
-    [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_-]*):[[:space:]]*(.*)$ ]] || \
-      fail "$file has malformed frontmatter at line $line_number"
-
-    key="${BASH_REMATCH[1]}"
-    value="${BASH_REMATCH[2]}"
-    [[ "$seen" != *"|$key|"* ]] || fail "$file has duplicate $key frontmatter"
-    seen+="$key|"
-    validate_scalar_syntax "$file" "$key" "$value"
-  done < "$file"
-
-  [[ "$closed" -eq 1 ]] || fail "$file is missing the closing frontmatter delimiter"
-}
-
-frontmatter_field() {
-  local file="$1"
-  local key="$2"
-
-  awk -v key="$key" '
-    NR == 1 { in_frontmatter = ($0 == "---"); next }
-    in_frontmatter && $0 == "---" { exit }
-    in_frontmatter {
-      prefix = key ":"
-      if (index($0, prefix) == 1) {
-        value = substr($0, length(prefix) + 1)
-        sub(/^[[:space:]]+/, "", value)
-        print value
-        found = 1
-        exit
-      }
-    }
-    END { exit(found ? 0 : 1) }
-  ' "$file"
-}
-
 validate_frontmatter() {
   local skill="$1"
   local file="$2"
-  local name_raw description_raw name description
 
-  parse_frontmatter "$file"
+  command -v ruby >/dev/null 2>&1 || fail "ruby is required to validate SKILL.md YAML frontmatter"
 
-  if ! name_raw="$(frontmatter_field "$file" name)"; then
-    fail "$file is missing name frontmatter"
-  fi
-  if ! description_raw="$(frontmatter_field "$file" description)"; then
-    fail "$file is missing description frontmatter"
-  fi
+  ruby - "$skill" "$file" <<'RUBY'
+require "yaml"
 
-  name="$(scalar_value "$file" name "$name_raw")"
-  description="$(scalar_value "$file" description "$description_raw")"
+skill = ARGV.fetch(0)
+file = ARGV.fetch(1)
 
-  [[ -n "$name" ]] || fail "$file has an empty name"
-  [[ -n "$description" ]] || fail "$file has an empty description"
-  [[ "$name" == "$skill" ]] || fail "$file frontmatter name '$name' does not match directory '$skill'"
+def fail!(message)
+  warn "ERROR: #{message}"
+  exit 1
+end
+
+content = File.read(file, encoding: "UTF-8")
+fail!("#{file} is not valid UTF-8") unless content.valid_encoding?
+
+lines = content.lines
+fail!("#{file} must start with YAML frontmatter") unless lines.first&.chomp == "---"
+
+closing = (1...lines.length).find { |index| lines[index].chomp == "---" }
+fail!("#{file} is missing the closing frontmatter delimiter") unless closing
+
+frontmatter = lines[1...closing].join
+
+begin
+  metadata = YAML.safe_load(frontmatter, aliases: false)
+rescue Psych::Exception => error
+  detail = error.message.lines.first.to_s.strip
+  fail!("#{file} has invalid YAML frontmatter: #{detail}")
+end
+
+fail!("#{file} frontmatter must be a YAML mapping") unless metadata.is_a?(Hash)
+
+allowed_fields = %w[name description license compatibility metadata allowed-tools]
+unknown_fields = metadata.keys.reject { |key| key.is_a?(String) && allowed_fields.include?(key) }
+unless unknown_fields.empty?
+  fail!("#{file} has unsupported frontmatter fields: #{unknown_fields.map(&:inspect).join(", ")}")
+end
+
+name = metadata["name"]
+unless name.is_a?(String) && !name.strip.empty?
+  fail!("#{file} field 'name' must be a non-empty string")
+end
+
+normalized_name = name.strip.unicode_normalize(:nfkc)
+fail!("#{file} name exceeds 64 characters") if normalized_name.length > 64
+fail!("#{file} name must be lowercase") unless normalized_name == normalized_name.downcase
+fail!("#{file} name cannot start or end with a hyphen") if normalized_name.start_with?("-") || normalized_name.end_with?("-")
+fail!("#{file} name cannot contain consecutive hyphens") if normalized_name.include?("--")
+unless normalized_name.match?(/\A[\p{Alnum}-]+\z/u)
+  fail!("#{file} name may contain only letters, digits, and hyphens")
+end
+
+directory_name = File.basename(File.dirname(file)).unicode_normalize(:nfkc)
+unless normalized_name == directory_name || normalized_name == skill
+  fail!("#{file} name '#{normalized_name}' does not match directory '#{directory_name}'")
+end
+fail!("#{file} name '#{normalized_name}' does not match expected skill '#{skill}'") unless normalized_name == skill
+
+description = metadata["description"]
+unless description.is_a?(String) && !description.strip.empty?
+  fail!("#{file} field 'description' must be a non-empty string")
+end
+fail!("#{file} description exceeds 1024 characters") if description.length > 1024
+
+if metadata.key?("compatibility")
+  compatibility = metadata["compatibility"]
+  unless compatibility.is_a?(String) && !compatibility.empty?
+    fail!("#{file} field 'compatibility' must be a non-empty string")
+  end
+  fail!("#{file} compatibility exceeds 500 characters") if compatibility.length > 500
+end
+
+%w[license allowed-tools].each do |field|
+  next unless metadata.key?(field)
+  fail!("#{file} field '#{field}' must be a string") unless metadata[field].is_a?(String)
+end
+
+if metadata.key?("metadata")
+  nested = metadata["metadata"]
+  fail!("#{file} field 'metadata' must be a string-to-string mapping") unless nested.is_a?(Hash)
+  unless nested.all? { |key, value| key.is_a?(String) && value.is_a?(String) }
+    fail!("#{file} field 'metadata' must contain only string keys and string values")
+  end
+end
+RUBY
 }
 
 validate_references() {
