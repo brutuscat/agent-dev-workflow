@@ -83,6 +83,19 @@ def fail!(message)
   exit 1
 end
 
+def safe_load_yaml(text)
+  parameters = YAML.method(:safe_load).parameters
+  keyword_aliases = parameters.any? do |kind, name|
+    [:key, :keyreq].include?(kind) && name == :aliases
+  end
+
+  if keyword_aliases
+    YAML.safe_load(text, aliases: false)
+  else
+    YAML.safe_load(text, [], [], false)
+  end
+end
+
 def validate_skill!(skills_dir, skill)
   file = File.join(skills_dir, skill, "SKILL.md")
   fail!("#{file} missing") unless File.file?(file)
@@ -99,7 +112,7 @@ def validate_skill!(skills_dir, skill)
   frontmatter = lines[1...closing].join
 
   begin
-    metadata = YAML.safe_load(frontmatter, aliases: false)
+    metadata = safe_load_yaml(frontmatter)
   rescue Psych::Exception => error
     detail = error.message.lines.first.to_s.strip
     fail!("#{file} has invalid YAML frontmatter: #{detail}")
