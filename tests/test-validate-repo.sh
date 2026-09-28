@@ -150,6 +150,16 @@ mv "$tmp_file" "$case_dir/skills/dev-tdd/SKILL.md"
 expect_fail "$case_dir" "$TMP/empty-description.log" env
 assert_contains "$TMP/empty-description.log" "empty description"
 
+echo "[validate] YAML null, boolean, numeric, and comment-only descriptions fail"
+for fixture in 'null' 'false' '123' '# comment only'; do
+  case_dir="$(copy_case "non-string-${fixture//[^A-Za-z0-9]/-}")"
+  tmp_file="$case_dir/skills/dev-tdd/SKILL.md.tmp"
+  sed "s/^description:.*/description: $fixture/" "$case_dir/skills/dev-tdd/SKILL.md" > "$tmp_file"
+  mv "$tmp_file" "$case_dir/skills/dev-tdd/SKILL.md"
+  expect_fail "$case_dir" "$TMP/non-string-description.log" env
+  assert_contains "$TMP/non-string-description.log" "requires description to be"
+done
+
 echo "[validate] missing baseline copy fails"
 case_dir="$(copy_case missing-baseline)"
 rm "$case_dir/skills/dev-verify/references/dev-baseline.md"
