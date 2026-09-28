@@ -88,7 +88,11 @@ scalar_value() {
       fail "$file requires $key to be a scalar string"
       ;;
     *)
-      normalized="${value%%[[:space:]]#*}"
+      if [[ "$value" == \#* ]]; then
+        normalized=""
+      else
+        normalized="${value%%[[:space:]]#*}"
+      fi
       while [[ "$normalized" == *[[:space:]] ]]; do
         normalized="${normalized%?}"
       done
