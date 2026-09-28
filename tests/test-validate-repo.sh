@@ -196,6 +196,23 @@ mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
 expect_fail "$case_dir" "$TMP/metadata-value.log" env
 assert_contains "$TMP/metadata-value.log" "metadata"
 
+echo "[validate] unsupported frontmatter field fails"
+case_dir="$(copy_case unsupported-field)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+sed '/^description:/a unknown-field: nope' "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/unsupported-field.log" env
+assert_contains "$TMP/unsupported-field.log" "unsupported frontmatter fields"
+
+echo "[validate] compatibility longer than 500 characters fails"
+case_dir="$(copy_case long-compatibility)"
+tmp_file="$case_dir/skills/dev-plan/SKILL.md.tmp"
+long_compatibility="$(printf 'x%.0s' {1..501})"
+sed "/^description:/a compatibility: $long_compatibility" "$case_dir/skills/dev-plan/SKILL.md" > "$tmp_file"
+mv "$tmp_file" "$case_dir/skills/dev-plan/SKILL.md"
+expect_fail "$case_dir" "$TMP/long-compatibility.log" env
+assert_contains "$TMP/long-compatibility.log" "compatibility exceeds 500 characters"
+
 echo "[validate] missing baseline copy fails"
 case_dir="$(copy_case missing-baseline)"
 rm "$case_dir/skills/dev-verify/references/dev-baseline.md"
