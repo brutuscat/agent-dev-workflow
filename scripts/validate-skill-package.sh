@@ -69,95 +69,97 @@ expected_skills="$(printf '%s\n' "${EXPECTED_SKILLS[@]}" | LC_ALL=C sort)"
   fail "skill set does not match"
 }
 
-validate_frontmatter() {
-  local skill="$1"
-  local file="$2"
-
+validate_frontmatter_package() {
   command -v ruby >/dev/null 2>&1 || fail "ruby is required to validate SKILL.md YAML frontmatter"
 
-  ruby - "$skill" "$file" <<'RUBY'
+  ruby - "$SKILLS_DIR" "${EXPECTED_SKILLS[@]}" <<'RUBY'
 require "yaml"
 
-skill = ARGV.fetch(0)
-file = ARGV.fetch(1)
+skills_dir = ARGV.shift
+expected_skills = ARGV
 
 def fail!(message)
   warn "ERROR: #{message}"
   exit 1
 end
 
-content = File.read(file, encoding: "UTF-8")
-fail!("#{file} is not valid UTF-8") unless content.valid_encoding?
+def validate_skill!(skills_dir, skill)
+  file = File.join(skills_dir, skill, "SKILL.md")
+  fail!("#{file} missing") unless File.file?(file)
 
-lines = content.lines
-fail!("#{file} must start with YAML frontmatter") unless lines.first&.chomp == "---"
+  content = File.read(file, encoding: "UTF-8")
+  fail!("#{file} is not valid UTF-8") unless content.valid_encoding?
 
-closing = (1...lines.length).find { |index| lines[index].chomp == "---" }
-fail!("#{file} is missing the closing frontmatter delimiter") unless closing
+  lines = content.lines
+  fail!("#{file} must start with YAML frontmatter") unless lines.first&.chomp == "---"
 
-frontmatter = lines[1...closing].join
+  closing = (1...lines.length).find { |index| lines[index].chomp == "---" }
+  fail!("#{file} is missing the closing frontmatter delimiter") unless closing
 
-begin
-  metadata = YAML.safe_load(frontmatter, aliases: false)
-rescue Psych::Exception => error
-  detail = error.message.lines.first.to_s.strip
-  fail!("#{file} has invalid YAML frontmatter: #{detail}")
-end
+  frontmatter = lines[1...closing].join
 
-fail!("#{file} frontmatter must be a YAML mapping") unless metadata.is_a?(Hash)
-
-allowed_fields = %w[name description license compatibility metadata allowed-tools]
-unknown_fields = metadata.keys.reject { |key| key.is_a?(String) && allowed_fields.include?(key) }
-unless unknown_fields.empty?
-  fail!("#{file} has unsupported frontmatter fields: #{unknown_fields.map(&:inspect).join(", ")}")
-end
-
-name = metadata["name"]
-unless name.is_a?(String) && !name.strip.empty?
-  fail!("#{file} field 'name' must be a non-empty string")
-end
-
-normalized_name = name.strip.unicode_normalize(:nfkc)
-fail!("#{file} name exceeds 64 characters") if normalized_name.length > 64
-fail!("#{file} name must be lowercase") unless normalized_name == normalized_name.downcase
-fail!("#{file} name cannot start or end with a hyphen") if normalized_name.start_with?("-") || normalized_name.end_with?("-")
-fail!("#{file} name cannot contain consecutive hyphens") if normalized_name.include?("--")
-unless normalized_name.match?(/\A[\p{Alnum}-]+\z/u)
-  fail!("#{file} name may contain only letters, digits, and hyphens")
-end
-
-directory_name = File.basename(File.dirname(file)).unicode_normalize(:nfkc)
-unless normalized_name == directory_name || normalized_name == skill
-  fail!("#{file} name '#{normalized_name}' does not match directory '#{directory_name}'")
-end
-fail!("#{file} name '#{normalized_name}' does not match expected skill '#{skill}'") unless normalized_name == skill
-
-description = metadata["description"]
-unless description.is_a?(String) && !description.strip.empty?
-  fail!("#{file} field 'description' must be a non-empty string")
-end
-fail!("#{file} description exceeds 1024 characters") if description.length > 1024
-
-if metadata.key?("compatibility")
-  compatibility = metadata["compatibility"]
-  unless compatibility.is_a?(String) && !compatibility.empty?
-    fail!("#{file} field 'compatibility' must be a non-empty string")
+  begin
+    metadata = YAML.safe_load(frontmatter, aliases: false)
+  rescue Psych::Exception => error
+    detail = error.message.lines.first.to_s.strip
+    fail!("#{file} has invalid YAML frontmatter: #{detail}")
   end
-  fail!("#{file} compatibility exceeds 500 characters") if compatibility.length > 500
-end
 
-%w[license allowed-tools].each do |field|
-  next unless metadata.key?(field)
-  fail!("#{file} field '#{field}' must be a string") unless metadata[field].is_a?(String)
-end
+  fail!("#{file} frontmatter must be a YAML mapping") unless metadata.is_a?(Hash)
 
-if metadata.key?("metadata")
-  nested = metadata["metadata"]
-  fail!("#{file} field 'metadata' must be a string-to-string mapping") unless nested.is_a?(Hash)
-  unless nested.all? { |key, value| key.is_a?(String) && value.is_a?(String) }
-    fail!("#{file} field 'metadata' must contain only string keys and string values")
+  allowed_fields = %w[name description license compatibility metadata allowed-tools]
+  unknown_fields = metadata.keys.reject { |key| key.is_a?(String) && allowed_fields.include?(key) }
+  unless unknown_fields.empty?
+    fail!("#{file} has unsupported frontmatter fields: #{unknown_fields.map(&:inspect).join(", ")}")
+  end
+
+  name = metadata["name"]
+  unless name.is_a?(String) && !name.strip.empty?
+    fail!("#{file} field 'name' must be a non-empty string")
+  end
+
+  normalized_name = name.strip.unicode_normalize(:nfkc)
+  fail!("#{file} name exceeds 64 characters") if normalized_name.length > 64
+  fail!("#{file} name must be lowercase") unless normalized_name == normalized_name.downcase
+  fail!("#{file} name cannot start or end with a hyphen") if normalized_name.start_with?("-") || normalized_name.end_with?("-")
+  fail!("#{file} name cannot contain consecutive hyphens") if normalized_name.include?("--")
+  unless normalized_name.match?(/\A[\p{Alnum}-]+\z/u)
+    fail!("#{file} name may contain only letters, digits, and hyphens")
+  end
+
+  directory_name = File.basename(File.dirname(file)).unicode_normalize(:nfkc)
+  fail!("#{file} name '#{normalized_name}' does not match directory '#{directory_name}'") unless normalized_name == directory_name
+  fail!("#{file} name '#{normalized_name}' does not match expected skill '#{skill}'") unless normalized_name == skill
+
+  description = metadata["description"]
+  unless description.is_a?(String) && !description.strip.empty?
+    fail!("#{file} field 'description' must be a non-empty string")
+  end
+  fail!("#{file} description exceeds 1024 characters") if description.length > 1024
+
+  if metadata.key?("compatibility")
+    compatibility = metadata["compatibility"]
+    unless compatibility.is_a?(String) && !compatibility.empty?
+      fail!("#{file} field 'compatibility' must be a non-empty string")
+    end
+    fail!("#{file} compatibility exceeds 500 characters") if compatibility.length > 500
+  end
+
+  %w[license allowed-tools].each do |field|
+    next unless metadata.key?(field)
+    fail!("#{file} field '#{field}' must be a string") unless metadata[field].is_a?(String)
+  end
+
+  if metadata.key?("metadata")
+    nested = metadata["metadata"]
+    fail!("#{file} field 'metadata' must be a string-to-string mapping") unless nested.is_a?(Hash)
+    unless nested.all? { |key, value| key.is_a?(String) && value.is_a?(String) }
+      fail!("#{file} field 'metadata' must contain only string keys and string values")
+    end
   end
 end
+
+expected_skills.each { |skill| validate_skill!(skills_dir, skill) }
 RUBY
 }
 
@@ -172,11 +174,12 @@ validate_references() {
   done < <(grep -Eo 'references/[A-Za-z0-9._/-]+\.md' "$file" | LC_ALL=C sort -u || true)
 }
 
+validate_frontmatter_package
+
 for skill in "${EXPECTED_SKILLS[@]}"; do
   skill_dir="$SKILLS_DIR/$skill"
   file="$skill_dir/SKILL.md"
   [[ -f "$file" ]] || fail "$file missing"
-  validate_frontmatter "$skill" "$file"
 
   [[ -f "$skill_dir/references/dev-baseline.md" ]] || fail "$skill baseline copy missing"
   cmp -s "$BASELINE_FILE" "$skill_dir/references/dev-baseline.md" || fail "$skill baseline copy drifted"
