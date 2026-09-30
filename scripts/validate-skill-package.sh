@@ -202,11 +202,46 @@ done
 
 AUTO_POLICY="$SKILLS_DIR/dev-auto/agents/openai.yaml"
 [[ -f "$AUTO_POLICY" ]] || fail "dev-auto explicit invocation policy missing: $AUTO_POLICY"
-awk '
-  /^[[:space:]]*policy:[[:space:]]*$/ { in_policy = 1; next }
-  in_policy && /^[^[:space:]]/ { in_policy = 0 }
-  in_policy && /^[[:space:]]+allow_implicit_invocation:[[:space:]]*false[[:space:]]*$/ { found = 1 }
-  END { exit(found ? 0 : 1) }
-' "$AUTO_POLICY" || fail "dev-auto must keep policy.allow_implicit_invocation: false"
+
+ruby - "$AUTO_POLICY" <<'RUBY'
+require "yaml"
+
+file = ARGV.fetch(0)
+
+def fail!(message)
+  warn "ERROR: #{message}"
+  exit 1
+end
+
+def safe_load_yaml(text)
+  parameters = YAML.method(:safe_load).parameters
+  keyword_aliases = parameters.any? do |kind, name|
+    [:key, :keyreq].include?(kind) && name == :aliases
+  end
+
+  if keyword_aliases
+    YAML.safe_load(text, aliases: false)
+  else
+    YAML.safe_load(text, [], [], false)
+  end
+end
+
+begin
+  document = safe_load_yaml(File.read(file, encoding: "UTF-8"))
+rescue Psych::Exception => error
+  detail = error.message.lines.first.to_s.strip
+  fail!("#{file} has invalid YAML: #{detail}")
+end
+
+fail!("#{file} must be a YAML mapping") unless document.is_a?(Hash)
+
+policy = document["policy"]
+fail!("#{file} must define a top-level policy mapping") unless policy.is_a?(Hash)
+
+value = policy["allow_implicit_invocation"]
+unless value.equal?(false)
+  fail!("#{file} must keep top-level policy.allow_implicit_invocation as boolean false")
+end
+RUBY
 
 echo "Skill package OK: ${#EXPECTED_SKILLS[@]} skills"

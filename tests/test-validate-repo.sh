@@ -225,6 +225,30 @@ rm "$case_dir/skills/dev-auto/agents/openai.yaml"
 expect_fail "$case_dir" "$TMP/missing-policy.log" env
 assert_contains "$TMP/missing-policy.log" "explicit invocation policy missing"
 
+echo "[validate] nested false cannot override top-level implicit-enabled policy"
+case_dir="$(copy_case nested-policy-false-positive)"
+cat > "$case_dir/skills/dev-auto/agents/openai.yaml" <<'YAML'
+interface:
+  display_name: "Dev Auto"
+  policy:
+    allow_implicit_invocation: false
+policy:
+  allow_implicit_invocation: true
+YAML
+expect_fail "$case_dir" "$TMP/nested-policy-false-positive.log" env
+assert_contains "$TMP/nested-policy-false-positive.log" "top-level policy.allow_implicit_invocation as boolean false"
+
+echo "[validate] string false is not accepted as the invocation policy boolean"
+case_dir="$(copy_case policy-string-false)"
+cat > "$case_dir/skills/dev-auto/agents/openai.yaml" <<'YAML'
+interface:
+  display_name: "Dev Auto"
+policy:
+  allow_implicit_invocation: "false"
+YAML
+expect_fail "$case_dir" "$TMP/policy-string-false.log" env
+assert_contains "$TMP/policy-string-false.log" "top-level policy.allow_implicit_invocation as boolean false"
+
 echo "[validate] missing referenced resource fails"
 case_dir="$(copy_case missing-reference)"
 rm "$case_dir/skills/dev-code-review/references/risk-checklist.md"
