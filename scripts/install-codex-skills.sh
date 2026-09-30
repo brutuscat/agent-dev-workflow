@@ -234,24 +234,41 @@ ROLLBACK_NEEDED=0
 TARGET_CREATED=0
 PUBLISH_STEP=0
 MUTATION_STEP=0
-MUTATION_ACTIVE=0
-DEFERRED_SIGNAL_STATUS=0
+PUBLISHED_SOURCES=()
 PUBLISHED_PATHS=()
 BACKED_UP_NAMES=()
 
 rollback() {
-  local i path name
+  local i path source name
+  local status=0
 
   for ((i = ${#PUBLISHED_PATHS[@]} - 1; i >= 0; i--)); do
+    source="${PUBLISHED_SOURCES[$i]}"
     path="${PUBLISHED_PATHS[$i]}"
-    rm -rf "$path"
+
+    # Intent is recorded before rename. Remove the destination only when the
+    # staged source disappeared, which proves this rename took effect.
+    if [[ ! -e "$source" && ! -L "$source" && ( -e "$path" || -L "$path" ) ]]; then
+      if ! rm -rf "$path"; then
+        echo "ERROR: could not remove published path during rollback: $path" >&2
+        status=1
+      fi
+    fi
   done
 
   if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
     for ((i = ${#BACKED_UP_NAMES[@]} - 1; i >= 0; i--)); do
       name="${BACKED_UP_NAMES[$i]}"
       if [[ -e "$BACKUP_DIR/$name" || -L "$BACKUP_DIR/$name" ]]; then
-        mv "$BACKUP_DIR/$name" "$TARGET_REALPATH/$name"
+        if [[ -e "$TARGET_REALPATH/$name" || -L "$TARGET_REALPATH/$name" ]]; then
+          echo "ERROR: rollback destination is occupied; preserved backup at $BACKUP_DIR/$name" >&2
+          status=1
+          continue
+        fi
+        if ! mv "$BACKUP_DIR/$name" "$TARGET_REALPATH/$name"; then
+          echo "ERROR: could not restore backup during rollback: $name" >&2
+          status=1
+        fi
       fi
     done
     rmdir "$BACKUP_DIR" 2>/dev/null || true
@@ -260,6 +277,8 @@ rollback() {
   if [[ "$TARGET_CREATED" -eq 1 ]]; then
     rmdir "$TARGET_REALPATH" 2>/dev/null || true
   fi
+
+  return "$status"
 }
 
 cleanup() {
@@ -276,20 +295,9 @@ cleanup() {
   exit "$status"
 }
 
-handle_signal() {
-  local status="$1"
-
-  if [[ "$MUTATION_ACTIVE" -eq 1 ]]; then
-    DEFERRED_SIGNAL_STATUS="$status"
-    return 0
-  fi
-
-  exit "$status"
-}
-
 trap cleanup EXIT
-trap 'handle_signal 130' INT
-trap 'handle_signal 143' TERM
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   fail "another installer may be using this target: $LOCK_DIR"
@@ -402,26 +410,10 @@ maybe_inject_failure() {
   fi
 }
 
-begin_mutation() {
-  MUTATION_STEP=$((MUTATION_STEP + 1))
-  MUTATION_ACTIVE=1
-}
-
 maybe_inject_signal_after_mv() {
   if [[ -n "${AGENT_DEV_WORKFLOW_TEST_SIGNAL_AFTER_MV_STEP:-}" && \
         "$MUTATION_STEP" == "${AGENT_DEV_WORKFLOW_TEST_SIGNAL_AFTER_MV_STEP}" ]]; then
-    kill -TERM "$"
-  fi
-}
-
-end_mutation() {
-  local status
-
-  MUTATION_ACTIVE=0
-  if [[ "$DEFERRED_SIGNAL_STATUS" -ne 0 ]]; then
-    status="$DEFERRED_SIGNAL_STATUS"
-    DEFERRED_SIGNAL_STATUS=0
-    exit "$status"
+    kill -TERM "$$"
   fi
 }
 
@@ -429,12 +421,12 @@ backup_existing() {
   local name="$1"
   [[ -e "$TARGET_REALPATH/$name" || -L "$TARGET_REALPATH/$name" ]] || return 0
 
-  begin_mutation
+  # Record rollback intent before the rename. If a signal arrives immediately
+  # after mv, cleanup can still discover and restore the backup.
+  BACKED_UP_NAMES+=("$name")
+  MUTATION_STEP=$((MUTATION_STEP + 1))
   mv "$TARGET_REALPATH/$name" "$BACKUP_DIR/$name"
   maybe_inject_signal_after_mv
-  BACKED_UP_NAMES+=("$name")
-  end_mutation
-
   maybe_inject_failure
 }
 
@@ -442,12 +434,13 @@ publish_staged() {
   local source="$1"
   local destination="$2"
 
-  begin_mutation
+  # Record both ends before the rename. Rollback checks whether source vanished
+  # before removing destination, so an interrupted pre-rename intent is harmless.
+  PUBLISHED_SOURCES+=("$source")
+  PUBLISHED_PATHS+=("$destination")
+  MUTATION_STEP=$((MUTATION_STEP + 1))
   mv "$source" "$destination"
   maybe_inject_signal_after_mv
-  PUBLISHED_PATHS+=("$destination")
-  end_mutation
-
   maybe_inject_failure
 }
 
