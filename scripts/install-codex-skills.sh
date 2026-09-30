@@ -71,67 +71,62 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-lexical_absolute_path() {
+absolute_path_preserving_components() {
   local input="$1"
-  local absolute part
-  local -a parts stack
 
   if [[ "$input" == /* ]]; then
-    absolute="$input"
+    printf '%s\n' "$input"
   else
-    absolute="$(pwd -P)/$input"
+    printf '%s/%s\n' "$(pwd -P)" "$input"
   fi
-
-  IFS='/' read -r -a parts <<< "$absolute"
-  stack=()
-  for part in "${parts[@]}"; do
-    case "$part" in
-      ''|'.') ;;
-      '..')
-        if [[ ${#stack[@]} -gt 0 ]]; then
-          unset "stack[$((${#stack[@]} - 1))]"
-        fi
-        ;;
-      *) stack+=("$part") ;;
-    esac
-  done
-
-  if [[ ${#stack[@]} -eq 0 ]]; then
-    printf '/\n'
-    return
-  fi
-
-  printf '/%s' "${stack[0]}"
-  for ((i = 1; i < ${#stack[@]}; i++)); do
-    printf '/%s' "${stack[$i]}"
-  done
-  printf '\n'
 }
 
 canonical_path() {
-  local normalized probe parent base
+  local probe parent base component
   local -a suffix
 
-  normalized="$(lexical_absolute_path "$1")"
-  probe="$normalized"
+  probe="$(absolute_path_preserving_components "$1")"
   suffix=()
 
+  # Walk upward without collapsing "." or "..". The kernel resolves existing
+  # components first, so symlinks retain normal filesystem path semantics.
   while [[ ! -e "$probe" && ! -L "$probe" ]]; do
     [[ "$probe" != "/" ]] || break
-    suffix=("$(basename "$probe")" "${suffix[@]}")
-    probe="$(dirname "$probe")"
+    base="$(basename "$probe")"
+    suffix=("$base" "${suffix[@]}")
+    parent="$(dirname "$probe")"
+    [[ "$parent" != "$probe" ]] || break
+    probe="$parent"
   done
 
   if [[ -d "$probe" ]]; then
     probe="$(cd "$probe" && pwd -P)"
-  else
+  elif [[ -e "$probe" || -L "$probe" ]]; then
+    if [[ ${#suffix[@]} -gt 0 ]]; then
+      fail "target path traverses a non-directory component: $probe"
+    fi
     parent="$(cd "$(dirname "$probe")" && pwd -P)"
-    base="$(basename "$probe")"
-    probe="$parent/$base"
+    probe="$parent/$(basename "$probe")"
+  else
+    fail "could not resolve target path: $1"
   fi
 
-  for base in "${suffix[@]}"; do
-    probe="$probe/$base"
+  # The remaining suffix did not exist when inspected, so no remaining
+  # component can be a symlink. Collapse only that unresolved suffix.
+  for component in "${suffix[@]}"; do
+    case "$component" in
+      ''|'.') ;;
+      '..')
+        [[ "$probe" == "/" ]] || probe="$(dirname "$probe")"
+        ;;
+      *)
+        if [[ "$probe" == "/" ]]; then
+          probe="/$component"
+        else
+          probe="$probe/$component"
+        fi
+        ;;
+    esac
   done
 
   printf '%s\n' "$probe"
@@ -238,6 +233,9 @@ BACKUP_DIR=""
 ROLLBACK_NEEDED=0
 TARGET_CREATED=0
 PUBLISH_STEP=0
+MUTATION_STEP=0
+MUTATION_ACTIVE=0
+DEFERRED_SIGNAL_STATUS=0
 PUBLISHED_PATHS=()
 BACKED_UP_NAMES=()
 
@@ -277,8 +275,21 @@ cleanup() {
   [[ "$LOCK_OWNED" -eq 0 ]] || rm -rf "$LOCK_DIR"
   exit "$status"
 }
+
+handle_signal() {
+  local status="$1"
+
+  if [[ "$MUTATION_ACTIVE" -eq 1 ]]; then
+    DEFERRED_SIGNAL_STATUS="$status"
+    return 0
+  fi
+
+  exit "$status"
+}
+
 trap cleanup EXIT
-trap 'exit 130' INT TERM
+trap 'handle_signal 130' INT
+trap 'handle_signal 143' TERM
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   fail "another installer may be using this target: $LOCK_DIR"
@@ -391,19 +402,52 @@ maybe_inject_failure() {
   fi
 }
 
+begin_mutation() {
+  MUTATION_STEP=$((MUTATION_STEP + 1))
+  MUTATION_ACTIVE=1
+}
+
+maybe_inject_signal_after_mv() {
+  if [[ -n "${AGENT_DEV_WORKFLOW_TEST_SIGNAL_AFTER_MV_STEP:-}" && \
+        "$MUTATION_STEP" == "${AGENT_DEV_WORKFLOW_TEST_SIGNAL_AFTER_MV_STEP}" ]]; then
+    kill -TERM "$"
+  fi
+}
+
+end_mutation() {
+  local status
+
+  MUTATION_ACTIVE=0
+  if [[ "$DEFERRED_SIGNAL_STATUS" -ne 0 ]]; then
+    status="$DEFERRED_SIGNAL_STATUS"
+    DEFERRED_SIGNAL_STATUS=0
+    exit "$status"
+  fi
+}
+
 backup_existing() {
   local name="$1"
   [[ -e "$TARGET_REALPATH/$name" || -L "$TARGET_REALPATH/$name" ]] || return 0
+
+  begin_mutation
   mv "$TARGET_REALPATH/$name" "$BACKUP_DIR/$name"
+  maybe_inject_signal_after_mv
   BACKED_UP_NAMES+=("$name")
+  end_mutation
+
   maybe_inject_failure
 }
 
 publish_staged() {
   local source="$1"
   local destination="$2"
+
+  begin_mutation
   mv "$source" "$destination"
+  maybe_inject_signal_after_mv
   PUBLISHED_PATHS+=("$destination")
+  end_mutation
+
   maybe_inject_failure
 }
 

@@ -172,6 +172,22 @@ for step in $(seq 1 18); do
   }
 done
 
+echo "[install] trapped signals after every managed rename roll back completely"
+for step in $(seq 1 18); do
+  target="$TMP/signal-rollback-$step"
+  cp -R "$base_target" "$target"
+  snapshot_tree "$target" "$TMP/signal-rollback-$step.before"
+  if AGENT_DEV_WORKFLOW_TEST_SIGNAL_AFTER_MV_STEP="$step" \
+      bash "$source4/scripts/install-codex-skills.sh" --target-dir "$target" >"$TMP/signal-rollback-$step.log" 2>&1; then
+    fail "signal injection after mutation step $step unexpectedly succeeded"
+  fi
+  snapshot_tree "$target" "$TMP/signal-rollback-$step.after"
+  cmp -s "$TMP/signal-rollback-$step.before" "$TMP/signal-rollback-$step.after" || {
+    diff -u "$TMP/signal-rollback-$step.before" "$TMP/signal-rollback-$step.after" >&2 || true
+    fail "signal rollback mismatch after mutation step $step"
+  }
+done
+
 echo "[install] local modifications in managed skills are preserved and refused"
 target5="$TMP/target-modified"
 cp -R "$base_target" "$target5"
@@ -231,6 +247,18 @@ run_expect_fail "$TMP/overlap.log" bash "$source7/scripts/install-codex-skills.s
 ln -s "$source7/skills" "$TMP/skills-link"
 run_expect_fail "$TMP/overlap-symlink.log" bash "$source7/scripts/install-codex-skills.sh" --target-dir "$TMP/skills-link/dev-auto/nested"
 [[ "$(git -C "$source7" status --porcelain)" == "$git_before" ]] || fail "symlink overlap mutated source"
+
+echo "[install] symlink plus parent components resolve with filesystem semantics"
+physical_root="$TMP/path-physical/codex"
+mkdir -p "$physical_root/config"
+path_link="$TMP/path-link"
+ln -s "$physical_root/config" "$path_link"
+requested_target="$path_link/../skills"
+lexically_collapsed_target="$TMP/skills"
+bash "$source1/scripts/install-codex-skills.sh" --target-dir "$requested_target" > "$TMP/path-resolution.log"
+assert_file "$physical_root/skills/dev-auto/SKILL.md"
+assert_not_exists "$lexically_collapsed_target"
+assert_contains "$TMP/path-resolution.log" "Installed 8 Agent Dev Workflow skills to $physical_root/skills"
 
 echo "[install] active lock refuses concurrent installer"
 source8="$TMP/source-lock"
