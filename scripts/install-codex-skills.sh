@@ -100,12 +100,12 @@ canonical_path() {
   done
 
   if [[ -d "$probe" ]]; then
-    probe="$(cd "$probe" && pwd -P)"
+    probe="$(cd -P "$probe" && pwd -P)"
   elif [[ -e "$probe" || -L "$probe" ]]; then
     if [[ ${#suffix[@]} -gt 0 ]]; then
       fail "target path traverses a non-directory component: $probe"
     fi
-    parent="$(cd "$(dirname "$probe")" && pwd -P)"
+    parent="$(cd -P "$(dirname "$probe")" && pwd -P)"
     probe="$parent/$(basename "$probe")"
   else
     fail "could not resolve target path: $1"
