@@ -6,10 +6,48 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          check-latest: true
+          package-manager-cache: false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1, 2026-09-25
+        with:
+          ruby-version: '4.0'
+
+      - name: Verify CI toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Runner: ubuntu-26.04"
+          echo "Node: $(node --version)"
+          echo "Ruby: $(ruby --version)"
+          echo "Git: $(git --version)"
+          echo "Bash: $(bash --version | head -n 1)"
+          [[ "$(node -p 'process.versions.node.split(".")[0]')" == "24" ]]
+          ruby -e 'abort "expected Ruby 4.0.x, got #{RUBY_VERSION}" unless RUBY_VERSION.start_with?("4.0.")'
+
       - name: Validate repository
-        run: bash scripts/validate-repo.sh
+        env:
+          VALIDATE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          VALIDATE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          bash scripts/validate-repo.sh
+          bash scripts/test.sh

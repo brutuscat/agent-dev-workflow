@@ -53,10 +53,10 @@ Run before proposing a repository change:
 
 ```bash
 bash scripts/validate-repo.sh
-git diff --check
+bash scripts/test.sh
 ```
 
-If executable behavior changes, run the narrow relevant test as well. Report failures instead of weakening the checks to make the change pass.
+If executable behavior changes, add or update the narrow regression case that proves it. Report failures instead of weakening the checks to make the change pass.
 
 ## Documentation map
 
