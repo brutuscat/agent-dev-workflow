@@ -15,11 +15,13 @@ Read the request, relevant code, nearby tests, existing docs, and any current `.
 
 Ask only about missing information that changes user-visible behavior, a public contract, authorization, destructive scope, or another material decision. Preserve decisions the user already made.
 
-A clear request does not need an interview.
+A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before proposing a solution. Do not invent a success target to make the request seem ready.
 
 ## Produce the contract
 
 Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested.
+
+Separate the goal from a proposed method. Preserve an explicitly required method as a constraint, not as a substitute for the outcome. Make constraints, non-goals, assumptions, and material open questions explicit in the sections below without duplicating them in `Goal`.
 
 Keep the artifact small:
 
@@ -30,16 +32,16 @@ Keep the artifact small:
 > Last updated: <YYYY-MM-DD>
 
 ## Goal
-<What changes for the user or system>
+<Observable outcome and desired effect; affected user, system, or decision context when relevant>
 
 ## In scope
 <Included behavior>
 
 ## Out of scope
-<Explicit exclusions that matter>
+<Non-goals and explicit exclusions that matter>
 
 ## Constraints and assumptions
-<Only consequential constraints or assumptions>
+<Consequential constraints and assumptions; distinguish confirmed facts from assumptions>
 
 ## Acceptance criteria
 - AC-1: <observable outcome>
@@ -51,7 +53,7 @@ Keep the artifact small:
 
 Use `READY` when material behavior and scope are resolved. Use `BLOCKED` when a named decision or missing fact prevents dependent work. Otherwise use `DRAFT`.
 
-Acceptance criteria describe observable outcomes, not implementation steps.
+Acceptance criteria prove the goal is achieved within its constraints. Describe observable outcomes and how to recognize success, not implementation steps.
 
 ## Boundaries
 
