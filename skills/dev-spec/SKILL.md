@@ -15,7 +15,7 @@ Read the request, relevant code, nearby tests, existing docs, and any current `.
 
 Ask only about missing information that changes user-visible behavior, a public contract, authorization, destructive scope, or another material decision. Preserve decisions the user already made.
 
-A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before proposing a solution. Do not invent a success target to make the request seem ready.
+A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before producing the contract. Do not invent a success target to make the request seem ready.
 
 ## Produce the contract
 

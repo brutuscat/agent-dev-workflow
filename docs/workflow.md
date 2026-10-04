@@ -97,7 +97,7 @@ Stable `AC-*` identifiers are useful when a plan, worker, verifier, and reviewer
 
 If implementation changes the agreed behavior, update the contract or report the drift before review.
 
-Before relying on a plan, compare it with its current source contract and material decisions. On a change, mark it `STALE`, identify affected sections and dependent steps/checks, and revise and revalidate them before restoring readiness. Independent, unaffected work may continue within existing authorization. Keep the decision and drift record in the existing plan, not a duplicate protocol directory.
+Every skill that consumes a plan applies the baseline's "Check plans before use" gate, including direct `dev-tdd` invocation. Compare the plan status, source request/spec, constraints, and material decisions with the current contract. On a change, treat it as `STALE`, identify affected sections and dependent steps/checks, and revise and revalidate them before relying on those parts. Update the existing artifact only when edits are authorized; read-only skills report staleness without editing files. Independent, unaffected work and read-only checks against the current contract may continue within existing authorization. No `dev-plan` rerun or duplicate protocol directory is required.
 
 If a bug investigation reveals a larger design change, stop smuggling the refactor into the fix. Move the design decision into `dev-plan`.
 

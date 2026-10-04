@@ -27,3 +27,13 @@ Do not stash, reset, overwrite, reformat, or discard unrelated work. Limit edits
 Choose checks that demonstrate the requested behavior on the final relevant state.
 
 Report exact commands and meaningful results. Distinguish static checks, unit tests, simulations, browsers/devices, staging, and production evidence. If a required check cannot run, state the missing proof and narrow the claim.
+
+## 5. Check plans before use
+
+Before any skill relies on a plan, read its status and compare its source request/spec, constraints, and material decisions with the current contract. A `READY` label alone does not prove freshness.
+
+If an input changed, treat the plan as `STALE` and identify affected sections and dependent steps/checks. Write that status and impact into the existing plan only when artifact edits are authorized; otherwise report them without editing files.
+
+Do not rely on a `DRAFT`, `BLOCKED`, or `STALE` plan, or one whose freshness cannot be established, for dependent implementation or completion claims. Before relying on affected parts, revise them and revalidate acceptance coverage, dependencies, choices, and feasibility; restore `READY` only when those checks pass and blockers are resolved. Perform repairs only within existing authority; otherwise report the needed revision.
+
+Independent, unaffected work and read-only checks against the current contract may continue within existing authorization. This check does not require a plan for small, clear tasks or an invocation of `dev-plan`.
