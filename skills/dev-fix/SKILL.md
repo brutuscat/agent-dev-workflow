@@ -32,6 +32,18 @@ Trace the real control/data path backward from the symptom until you find where 
 
 Use competing hypotheses only when they help discriminate evidence. Do not create a fixed quota of hypotheses or attach fake probabilities.
 
+For substantial investigations, record this diagnostic trace, working backward from the effect:
+
+```text
+symptom -> failure mode -> first contract violation -> supported root cause
+```
+
+The symptom is what was observed; the failure mode is how behavior breaks; the first contract violation is the earliest supported divergence on the actual path; the root cause explains why that divergence occurs. These arrows show the investigation order, not cause-to-effect direction.
+
+For every link, cite evidence or state the mechanism that connects it. Mark uncertain links as hypotheses; a plausible mechanism or a nearby code change alone does not establish root cause. Before claiming a cause across an uncertain link, run a discriminating check and explain which observation supports or rules out the hypothesis.
+
+If a necessary check cannot run or is inconclusive, report the candidate cause, uncertain link, and missing evidence. Do not label the investigation `DIAGNOSED` or the candidate a supported root cause; use `BLOCKED` when that gap prevents progress. Small, direct bugs do not need a formal chain artifact.
+
 ## Fix and prove
 
 When a fix is requested and the cause is supported:
@@ -53,7 +65,8 @@ For a substantial investigation, or when requested, use `.agent/fixes/<slug>.md`
 - status: `DIAGNOSED`, `FIXED`, or `BLOCKED`;
 - symptom and expectation;
 - reproduction;
-- supported root cause;
+- causal chain with evidence or mechanisms, uncertain links, and discriminating checks/results;
+- supported root cause, or candidate causes and the missing proof;
 - fix;
 - commands/results;
 - remaining limits.

@@ -26,8 +26,8 @@ Each phase consumes evidence and produces a narrower contract for the next phase
 
 | Phase | Consumes | Produces |
 |---|---|---|
-| `dev-spec` | Request, code, docs, known constraints | Scope and observable acceptance criteria |
-| `dev-plan` | Spec or clear request, repository structure | Ordered implementation and verification plan |
+| `dev-spec` | Request, code, docs, known constraints | Outcome, desired effect, scope, and observable acceptance criteria |
+| `dev-plan` | Spec or clear request, repository structure | Chosen approach, validated dependencies, and acceptance-mapped steps and verification |
 | `dev-tdd` | Known behavior | Focused test evidence and implementation |
 | `dev-fix` | Symptom and expected behavior | Reproduction, cause, fix, regression evidence |
 | `dev-verify` | Final relevant state | Commands and observations supporting completion claims |
@@ -54,13 +54,17 @@ Specs use:
 - `READY` — material behavior and scope are resolved.
 - `BLOCKED` — a named decision or missing fact prevents dependent work.
 
-Plans use the same three statuses. A plan is `READY` when its open technical decisions are resolved; that does not authorize implementation.
+Plans use the same three statuses plus `STALE`: a source spec or request, constraint, or material decision changed and affected sections need revalidation. A plan is `READY` only when it is current, covers its acceptance criteria, and has no unresolved material decision, invalid dependency, or feasibility blocker. Readiness does not authorize implementation.
+
+For non-trivial plans, distinguish required AND work from alternative OR paths, select one viable path, and validate executable or independently verifiable leaves before ordering the steps. Keep consequential choices in an optional `Decisions` section with alternatives, criteria, rationale, and affected requirements or steps. Small, obvious changes do not need this structure.
 
 Fix records use:
 
 - `DIAGNOSED` — root cause is supported but no fix was requested or completed.
 - `FIXED` — the scoped fix exists with relevant evidence.
 - `BLOCKED` — a concrete missing decision, access requirement, or reproduction gap prevents progress.
+
+For substantial investigations, fix records trace `symptom -> failure mode -> first contract violation -> supported root cause`, with evidence or a mechanism for each link. Uncertain links remain hypotheses until a discriminating check supports the cause. A missing necessary check limits the diagnosis; it is not permission to claim `DIAGNOSED`.
 
 ## Acceptance criteria
 
@@ -92,6 +96,8 @@ Stable `AC-*` identifiers are useful when a plan, worker, verifier, and reviewer
 ## Drift
 
 If implementation changes the agreed behavior, update the contract or report the drift before review.
+
+Every skill that consumes a plan applies the baseline's "Check plans before use" gate, including direct `dev-tdd` invocation. Compare the plan status, source request/spec, constraints, and material decisions with the current contract. On a change, treat it as `STALE`, identify affected sections and dependent steps/checks, and revise and revalidate them before relying on those parts. Update the existing artifact only when edits are authorized; read-only skills report staleness without editing files. Independent, unaffected work and read-only checks against the current contract may continue within existing authorization. No `dev-plan` rerun or duplicate protocol directory is required.
 
 If a bug investigation reveals a larger design change, stop smuggling the refactor into the fix. Move the design decision into `dev-plan`.
 

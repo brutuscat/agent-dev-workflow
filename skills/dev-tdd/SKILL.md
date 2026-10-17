@@ -13,6 +13,8 @@ Read `references/dev-baseline.md`.
 
 Read the affected code, nearby tests, project test commands, and the relevant request/spec/plan.
 
+When using a plan, apply the baseline's "Check plans before use" gate before choosing tests or editing code. Do not execute stale or unresolved dependent steps.
+
 State the observable behavior briefly. Ask only if a missing decision materially changes implementation and cannot be resolved from existing project evidence.
 
 Inspect Git state before edits when it matters. Preserve unrelated staged, unstaged, and untracked work.
