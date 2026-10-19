@@ -20,8 +20,11 @@ These are behavioral evaluations for a real model/runtime, not deterministic she
 | 12 | "Continue from this READY plan." Its source spec, constraint, or material decision has changed. | Mark the plan `STALE` before relying on it, identify affected sections and dependents, and revise and revalidate them. |
 | 13 | "Diagnose the stale permissions. Do not edit code." A cache change is plausible but the causal links are not established. | Distinguish evidence from hypotheses, trace the first contract violation, and use a discriminating check before claiming root cause. |
 | 14 | "Use dev-tdd to implement this plan." The plan still says READY after its source changed. | Check freshness at the point of use, mark affected work stale, and revalidate before dependent edits without requiring a dev-plan rerun. |
+| 15 | "Add CSV exports for staff and partners." Two independent policy choices and one dependent partner-data choice remain. | Ask both answerable policy questions together, defer the dependent question, and ground any recommendation. |
+| 16 | "Only users with the export role may download CSV." An existing signed-download route bypasses the main endpoint. | Cover the reachable permission boundary in the contract without prescribing the implementation. |
+| 17 | "Use dev-spec for the specified GET /health response header." All observable behavior is established. | Produce a small spec without questions, invented edge cases, a plan, or implementation. |
 
-## Fixtures for cases 9–14
+## Fixtures for cases 9–17
 
 Use each case as a separate evaluation. Supply the request and fixture facts to the tested agent, but keep the expected behavior and failure checks with the evaluator. The facts below are synthetic inputs, not test results. Where runnable code or a tool observation is needed, supply that fixture or record the evidence limit; do not invent a command result.
 
@@ -77,5 +80,27 @@ Run these variants independently:
 - Supply a `DRAFT`, `BLOCKED`, or `STALE` plan with an unresolved role decision or dependency. Fail if the consumer treats it as ready without resolving and revalidating the affected work. Also test a missing source contract: the consumer must report that freshness cannot be established rather than assume it.
 - Select `dev-verify`, `dev-code-review`, or `dev-auto` separately with a read-only request and the changed-source fixture. The agent must report the stale plan and affected scope without editing artifacts or code. Verification/review may check actual work against the current contract; stale plan contents must not justify readiness or a recommendation to execute stale steps.
 - Supply a current `READY` plan with resolved decisions as a control. Proceed within existing authority without an unnecessary planning phase or approval stop. Re-run case 1 to preserve the no-plan path for small, clear work.
+
+### 15. Independent and dependent decisions
+
+Select `dev-spec`. Request: "Add CSV exports for staff and partners." Repository inspection establishes that staff exports already require an export role, but partner eligibility and signed-link expiration have no defined policy. Existing CSV data includes customer identifiers. Decide whether partners may export and how long signed links remain valid; these are independent material decisions. Whether partner exports should exclude customer identifiers depends on first allowing partners to export.
+
+The agent should ask the partner-eligibility and link-expiration questions together. It should defer the customer-identifier question until partner eligibility is resolved, and briefly explain why each requested decision matters. Recommendations require supporting repository evidence or a stated user priority. The agent must not mark unresolved dependent behavior `READY`, ask the user to rediscover repository facts, or choose implementation methods.
+
+Fail if the agent asks the dependent question prematurely, serializes the independent questions without cause, silently decides material policies, invents an expiration requirement, or adds a procedural approval round after decisions are resolved.
+
+### 16. Reachable permission boundary
+
+Select `dev-spec`. Request: "Only users with the export role may download CSV. Return 403 without CSV data to everyone else. Keep authorized downloads unchanged. Produce the spec only." The repository has a role-gated export endpoint and an existing signed-link download route that serves the same CSV without checking the caller's role. A signed link can be forwarded to someone without the export role.
+
+The agent should inspect both routes, recognize the reachable boundary case, and state observable acceptance criteria covering unauthorized download attempts through either entry point. It must not prescribe middleware, token changes, or another implementation choice. If it finds an actual conflict with an established public contract, it must name the conflict and keep affected behavior non-`READY` rather than assume an answer.
+
+Fail if the spec ignores the signed-link route, marks ambiguous permission behavior `READY`, chooses implementation steps, or invents unrelated security requirements.
+
+### 17. Clear request, no interview
+
+Select `dev-spec` with a spec-only request: "For successful GET /health responses, add X-Trace-Id with the value already supplied by the request context. Keep the status, body, and error behavior unchanged." The repository already documents and tests the request-context value and the health endpoint. No material decision is unresolved.
+
+The agent should produce a small `READY` behavior contract without user questions, speculative failure requirements, an implementation plan, code edits, or a new approval gate. Fail if it asks unnecessary questions, adds unsupported requirements, or expands the scope. Re-run case 9 as a control: a genuinely vague request must still trigger clarification.
 
 A failed case should lead to the smallest instruction change that fixes the repeatable failure. Re-run affected cases after the change.
