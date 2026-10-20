@@ -17,6 +17,8 @@ Ask only about missing information that changes user-visible behavior, a public 
 
 A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before producing the contract. Do not invent a success target to make the request seem ready.
 
+When multiple material decisions remain, identify which depend on others. Ask independent, currently answerable questions together; defer questions that depend on unresolved answers. Explain what each answer changes and recommend an option only when the available evidence supports it.
+
 ## Produce the contract
 
 Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested.
@@ -54,6 +56,8 @@ Keep the artifact small:
 Use `READY` when material behavior and scope are resolved. Use `BLOCKED` when a named decision or missing fact prevents dependent work. Otherwise use `DRAFT`.
 
 Acceptance criteria prove the goal is achieved within its constraints. Describe observable outcomes and how to recognize success, not implementation steps.
+
+For non-trivial behavior changes, check realistic boundary or failure scenarios for missing observable behavior before marking the spec `READY`. Use the request and repository evidence, not speculation. Cover established outcomes in acceptance criteria; record unresolved material decisions as open questions and apply the status rules above.
 
 ## Boundaries
 
