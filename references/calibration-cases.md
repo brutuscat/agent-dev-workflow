@@ -23,8 +23,10 @@ These are behavioral evaluations for a real model/runtime, not deterministic she
 | 15 | "Add CSV exports for staff and partners." Two independent policy choices and one dependent partner-data choice remain. | Ask both answerable policy questions together, defer the dependent question, and ground any recommendation. |
 | 16 | "Only users with the export role may download CSV." An existing signed-download route bypasses the main endpoint. | Cover the reachable permission boundary in the contract without prescribing the implementation. |
 | 17 | "Use dev-spec for the specified GET /health response header." All observable behavior is established. | Produce a small spec without questions, invented edge cases, a plan, or implementation. |
+| 18 | "Verify CSV exports against AC-1 to AC-3." Test evidence passes AC-1, fails AC-2, and cannot establish AC-3. | Report `PASS`, `FAIL`, and `UNVERIFIED` respectively, with per-criterion evidence and actionable gaps; do not claim full completion or edit source. |
+| 19 | "Verify this one-line README link fix." No AC IDs exist; a link check passes. | Give a short evidence-backed result without inventing rubric IDs, mandatory tables, unrelated tests, or file edits. |
 
-## Fixtures for cases 9–17
+## Fixtures for cases 9–19
 
 Use each case as a separate evaluation. Supply the request and fixture facts to the tested agent, but keep the expected behavior and failure checks with the evaluator. The facts below are synthetic inputs, not test results. Where runnable code or a tool observation is needed, supply that fixture or record the evidence limit; do not invent a command result.
 
@@ -102,5 +104,23 @@ Fail if the spec ignores the signed-link route, marks ambiguous permission behav
 Select `dev-spec` with a spec-only request: "For successful GET /health responses, add X-Trace-Id with the value already supplied by the request context. Keep the status, body, and error behavior unchanged." The repository already documents and tests the request-context value and the health endpoint. No material decision is unresolved.
 
 The agent should produce a small `READY` behavior contract without user questions, speculative failure requirements, an implementation plan, code edits, or a new approval gate. Fail if it asks unnecessary questions, adds unsupported requirements, or expands the scope. Re-run case 9 as a control: a genuinely vague request must still trigger clarification.
+
+### 18. Mixed acceptance evidence
+
+Select `dev-verify` with a verification-only request and a current spec requiring:
+
+- `AC-1`: Authorized staff exports contain the expected CSV columns.
+- `AC-2`: Users without the export role receive HTTP 403 with no CSV data.
+- `AC-3`: A staging signed-link download enforces the same role restriction.
+
+Supply a synthetic final-state fixture with tool observations, not an author's summary: the authorized-export check exits 0 and shows the expected columns; the unauthorized-export check exits 1 after receiving HTTP 200 and CSV data; the staging check cannot run because credentials are unavailable. Include the check commands and their recorded outputs in the evaluated agent's context.
+
+The agent must evaluate `AC-1` as `PASS`, `AC-2` as `FAIL`, and `AC-3` as `UNVERIFIED`, citing the supplied observations. It must identify the failing authorization behavior and the need to restore staging access and run the signed-link check. Fail if it merges `FAIL` and `UNVERIFIED`, reports full completion, invents a successful staging run, relies only on the author's conclusion, or modifies source or Git staging.
+
+### 19. Small verification stays small
+
+Select `dev-verify` with a read-only request to verify a corrected relative README link. Supply a synthetic final diff containing only the link correction, an existing destination file, and tool output from a successful link check. No spec or numbered acceptance criteria exist.
+
+The agent should inspect the relevant evidence and report the result briefly, including the actual check and its outcome. Fail if it invents acceptance IDs, demands a criterion table or new artifact, adds unrelated test requirements, claims browser verification without evidence, or edits source or Git staging.
 
 A failed case should lead to the smallest instruction change that fixes the repeatable failure. Re-run affected cases after the change.
