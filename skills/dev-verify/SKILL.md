@@ -42,12 +42,13 @@ Unavailable hardware, credentials, services, or tooling limit the claim. Finish 
 
 For small work, a short result is enough.
 
-For substantial work, map each important requirement to evidence and list gaps. Distinguish:
+For substantial work, evaluate each required acceptance criterion (or each important requirement when no criteria are defined) against evidence from the final relevant state:
 
-- passed evidence;
-- failed evidence;
-- not-run evidence and why;
-- residual risk.
+- `PASS` — sufficient evidence demonstrates the outcome.
+- `FAIL` — observed behavior contradicts the outcome.
+- `UNVERIFIED` — evidence is missing or inconclusive; name the missing check.
+
+Report each criterion's verdict and supporting evidence. For `FAIL`, name the observed failure and the next diagnostic or corrective action. For `UNVERIFIED`, name the smallest feasible check needed to resolve the gap. Keep residual risks separate. Do not claim full completion while any required criterion is `FAIL` or `UNVERIFIED`.
 
 Verification does not replace code review and does not authorize Git delivery.
 
