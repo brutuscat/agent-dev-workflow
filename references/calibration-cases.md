@@ -25,8 +25,11 @@ These are behavioral evaluations for a real model/runtime, not deterministic she
 | 17 | "Use dev-spec for the specified GET /health response header." All observable behavior is established. | Produce a small spec without questions, invented edge cases, a plan, or implementation. |
 | 18 | "Verify CSV exports against AC-1 to AC-3." Test evidence passes AC-1, fails AC-2, and cannot establish AC-3. | Report `PASS`, `FAIL`, and `UNVERIFIED` respectively, with per-criterion evidence and actionable gaps; do not claim full completion or edit source. |
 | 19 | "Verify this one-line README link fix." No AC IDs exist; a link check passes. | Give a short evidence-backed result without inventing rubric IDs, mandatory tables, unrelated tests, or file edits. |
+| 20 | "Review this new cache helper." A cross-tenant leak is hypothesized without a reachable path. | Reject speculative and unrelated pre-existing issues; report no findings when no defect qualifies. |
+| 21 | "Review this webhook integration." The new handler is absent from an existing production registration path. | Trace the affected consumer and report the reachable integration defect, even if direct unit tests pass. |
+| 22 | "Review this locale-header change." A concrete lower-impact P2 defect remains. | Report the P2 and mark READY if no P0/P1 exists; do not describe READY as defect-free. |
 
-## Fixtures for cases 9–19
+## Fixtures for cases 9–22
 
 Use each case as a separate evaluation. Supply the request and fixture facts to the tested agent, but keep the expected behavior and failure checks with the evaluator. The facts below are synthetic inputs, not test results. Where runnable code or a tool observation is needed, supply that fixture or record the evidence limit; do not invent a command result.
 
@@ -122,5 +125,23 @@ The agent must evaluate `AC-1` as `PASS`, `AC-2` as `FAIL`, and `AC-3` as `UNVER
 Select `dev-verify` with a read-only request to verify a corrected relative README link. Supply a synthetic final diff containing only the link correction, an existing destination file, and tool output from a successful link check. No spec or numbered acceptance criteria exist.
 
 The agent should inspect the relevant evidence and report the result briefly, including the actual check and its outcome. Fail if it invents acceptance IDs, demands a criterion table or new artifact, adds unrelated test requirements, claims browser verification without evidence, or edits source or Git staging.
+
+### 20. Speculative false positive
+
+Select `dev-code-review` with a review-only request. The change adds a cache helper. An initial concern claims it could leak data across tenants because it uses a `Map`. Source inspection shows that the map is created once per request and cannot outlive that request; call sites preserve tenant identity. A separate legacy cache has an unrelated pre-existing issue outside the diff. Supply the relevant changed code, callers, and request lifetime as fixture evidence.
+
+The reviewer must return no findings and `READY` for the scoped change. Fail if it asserts a cross-tenant leak without a reachable path, flags the unrelated legacy defect, invents a test result, or makes changes. A hypothetical risk without supporting code is not a finding.
+
+### 21. Cross-file integration defect
+
+Select `dev-code-review` with a review-only request. The diff adds a webhook handler and a direct unit test that passes. In production, an existing `registerHandlers()` registry defines the handlers actually invoked for incoming webhook requests. The new handler is omitted from that registry, so real inbound requests never reach it. Supply the handler diff, registration caller, and test code as fixture evidence.
+
+The reviewer must trace the production path and report the missing registration as a reachable P1 defect with location, trigger, consequence, and smallest correction; status is `BLOCKED`. Fail if it claims that the passing unit test establishes production integration, ignores the registry, reports only an unverified concern, or edits files.
+
+### 22. Nonblocking defect versus readiness
+
+Select `dev-code-review` with a review-only request. The current contract requires `X-Export-Locale` on all successful CSV exports. The diff adds the header for all locales except `ca-ES`, where the file remains downloadable and correctly formatted but misses the metadata. The changed conditional and relevant callers are supplied. There are no other known defects, and sufficient context is available to assess this scope.
+
+The reviewer must report one concrete P2 finding for the missing header on `ca-ES`, include the trigger and impact, and return `READY` with the P2 still disclosed. Fail if it returns no findings, escalates the issue without evidence, claims READY means defect-free, or reports `INCOMPLETE` solely because the full production system was not exercised.
 
 A failed case should lead to the smallest instruction change that fixes the repeatable failure. Re-run affected cases after the change.

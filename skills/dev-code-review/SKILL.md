@@ -19,6 +19,8 @@ Untracked files are not in `git diff`; inspect them when they belong to the requ
 
 Read enough callers, definitions, tests, configuration, and generated boundaries to understand changed behavior. Do not read the entire repository by default.
 
+Read applicable repository instructions for changed paths, including scoped `AGENTS.md` or `AGENTS.override.md` files. Honor more-specific instructions without overriding the user's review scope.
+
 ## Review behavior
 
 Use the request and relevant `.agent/` spec, plan, or fix record as the contract.
@@ -37,6 +39,17 @@ Load `references/risk-checklist.md` only when the diff touches those boundaries.
 
 Project linters and local conventions govern style. Style preference alone is not a defect.
 
+## Qualify findings
+
+Before reporting a candidate defect, confirm that:
+
+- the reviewed change introduced it or made it reachable; unrelated pre-existing issues are outside scope;
+- a concrete trigger, affected path, and consequence can be identified; inspect downstream consumers before claiming a cross-file impact;
+- it contradicts the current contract or a supported correctness invariant, rather than merely changing behavior intentionally;
+- the issue is discrete, actionable, and worth fixing without relying on unstated assumptions.
+
+Report every qualifying defect, but combine duplicates with the same cause and correction. If none qualify, return no findings. Do not manufacture findings from plausible but unverified risks.
+
 ## Findings
 
 Use priorities only when they help the reader:
@@ -51,7 +64,8 @@ Every finding needs:
 - verified location;
 - trigger or condition;
 - consequence;
-- smallest useful correction.
+- smallest useful correction;
+- supporting code path or observation, distinguishing demonstrated failures from code-supported predictions.
 
 Mark uncertainty instead of overstating it. Do not call a search miss proof that code is dead or unreachable.
 
@@ -65,7 +79,7 @@ Use:
 - `READY` when no blocking finding remains in the reviewed scope;
 - `INCOMPLETE` when missing context prevents a responsible result.
 
-`READY` is not proof that tests ran or production works.
+`READY` means no P0/P1 defect was found in the reviewed scope; P2 findings may remain. It is not a claim that the patch is defect-free, that tests ran, or that production works.
 
 A review-only request stays read-only. If fixes were already authorized, return findings to the implementation lane and review the resulting diff again.
 
