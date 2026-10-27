@@ -1,6 +1,6 @@
 # Review risk checklist
 
-Load only the sections that match the diff. These are prompts for investigation, not automatic findings. Report a problem only after establishing a reachable trigger and consequence.
+Apply only the checks relevant to the changed behavior and its affected callers. These are prompts for investigation, not automatic findings. Report a problem only after establishing a reachable trigger and consequence.
 
 ## Trust boundaries
 

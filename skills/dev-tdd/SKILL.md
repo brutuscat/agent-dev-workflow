@@ -29,8 +29,8 @@ Do not add a test when it would only restate a typo, formatting change, asset re
 
 ## Implement
 
-1. Run the focused proof.
-2. Confirm the failure is caused by the missing behavior, not a broken fixture or environment.
+1. Run the focused proof against the unchanged implementation when practical.
+2. For new behavior or a regression, confirm that the test fails for the expected reason, not a broken fixture or environment. For a behavior-preserving refactor, record the passing characterization baseline.
 3. Implement the smallest coherent change.
 4. Run the same proof again.
 5. Expand checks only as required by blast radius or project gates.
