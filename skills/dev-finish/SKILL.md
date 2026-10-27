@@ -15,7 +15,7 @@ Inspect the actual repository root, branch or detached HEAD, current commit, ind
 
 Preserve unrelated work and partial staging. Do not stash, reset, or discard user changes just to obtain a clean tree.
 
-Confirm that the exact files or commit being delivered have sufficient verification and review evidence for the requested action. Reuse evidence when it still covers the same state.
+Check available verification and review evidence for the exact files or commit being delivered. A PR may be opened to obtain CI or external review: run feasible preflight checks, disclose pending gates in the PR, and do not claim they passed. Do not merge with required gates unresolved. Reuse evidence when it still covers the same state.
 
 If the requested finish action is already clear, do not present another menu. Ask only for a genuinely missing destination, destructive scope, or other material choice.
 

@@ -33,7 +33,7 @@ Trace changed behavior through important transitions and effects. Check:
 - compatibility or migration gaps;
 - unrelated changes that alter delivery scope.
 
-Load `references/risk-checklist.md` only when the diff touches those boundaries.
+Read `references/risk-checklist.md`. Apply only the checks relevant to the changed behavior and its affected callers.
 
 Project linters and local conventions govern style. Style preference alone is not a defect.
 

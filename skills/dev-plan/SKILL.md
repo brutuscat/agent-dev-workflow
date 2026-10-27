@@ -43,7 +43,7 @@ A useful plan names:
 - verification for each observable requirement;
 - rollout or recovery when the change can fail operationally.
 
-Use `--quick` for a compact plan, not to skip material dependency or feasibility checks. Use `--deliberate` when migration, compatibility, security, destructive operations, or recovery risk needs explicit failure scenarios.
+Use `quick` mode for a compact plan, not to skip material dependency or feasibility checks. Use `deliberate` mode when migration, compatibility, security, destructive operations, or recovery risk needs explicit failure scenarios.
 
 ## Artifact
 
