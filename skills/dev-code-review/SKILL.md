@@ -19,7 +19,7 @@ Untracked files are not in `git diff`; inspect them when they belong to the requ
 
 Read enough callers, definitions, tests, configuration, and generated boundaries to understand changed behavior. Do not read the entire repository by default.
 
-Read applicable repository instructions for changed paths, including scoped `AGENTS.md` or `AGENTS.override.md` files. Honor more-specific instructions without overriding the user's review scope.
+For each changed path, read its applicable repository instructions. Within a directory, `AGENTS.override.md` replaces `AGENTS.md` when both exist. On conflicts across directories, instructions closest to the changed path take precedence. Do not broaden the user's review scope.
 
 ## Review behavior
 

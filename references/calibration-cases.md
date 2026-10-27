@@ -28,8 +28,9 @@ These are behavioral evaluations for a real model/runtime, not deterministic she
 | 20 | "Review this new cache helper." A cross-tenant leak is hypothesized without a reachable path. | Reject speculative and unrelated pre-existing issues; report no findings when no defect qualifies. |
 | 21 | "Review this webhook integration." The new handler is absent from an existing production registration path. | Trace the affected consumer and report the reachable integration defect, even if direct unit tests pass. |
 | 22 | "Review this locale-header change." A concrete lower-impact P2 defect remains. | Report the P2 and mark READY if no P0/P1 exists; do not describe READY as defect-free. |
+| 23 | "Review this read-only route." Both `AGENTS.md` and `AGENTS.override.md` exist in its directory and disagree on audit logging. | Apply the override in that directory, retain nonconflicting parent guidance, and avoid a superseded-rule finding. |
 
-## Fixtures for cases 9–22
+## Fixtures for cases 9–23
 
 Use each case as a separate evaluation. Supply the request and fixture facts to the tested agent, but keep the expected behavior and failure checks with the evaluator. The facts below are synthetic inputs, not test results. Where runnable code or a tool observation is needed, supply that fixture or record the evidence limit; do not invent a command result.
 
@@ -143,5 +144,11 @@ The reviewer must trace the production path and report the missing registration 
 Select `dev-code-review` with a review-only request. The current contract requires `X-Export-Locale` on all successful CSV exports. The diff adds the header for all locales except `ca-ES`, where the file remains downloadable and correctly formatted but misses the metadata. The changed conditional and relevant callers are supplied. There are no other known defects, and sufficient context is available to assess this scope.
 
 The reviewer must report one concrete P2 finding for the missing header on `ca-ES`, include the trigger and impact, and return `READY` with the P2 still disclosed. Fail if it returns no findings, escalates the issue without evidence, claims READY means defect-free, or reports `INCOMPLETE` solely because the full production system was not exercised.
+
+### 23. Same-directory instruction override
+
+Select `dev-code-review` for a review-only request to inspect a new read-only `GET /health` handler in `src/api/health.ts`. The diff and callers establish that the handler has no state-changing effects and introduces no other defect. The root `AGENTS.md` requires review of reachable authorization defects. In `src/api/`, `AGENTS.md` requires every new handler to emit an audit event, but `AGENTS.override.md` explicitly requires audit events only for state-changing handlers. Both files exist in the same directory, and the user's scope includes only the changed handler and its affected callers.
+
+The reviewer must apply `src/api/AGENTS.override.md` instead of `src/api/AGENTS.md`, retain nonconflicting root guidance, and return no findings with `READY` for this diff. Fail if it treats the two same-directory files as cumulative, flags the missing audit event under the superseded rule, ignores relevant parent instructions, broadens review scope, or invents another defect.
 
 A failed case should lead to the smallest instruction change that fixes the repeatable failure. Re-run affected cases after the change.
