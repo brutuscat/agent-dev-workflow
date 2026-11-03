@@ -62,7 +62,7 @@ The agent must name the affected step or criterion and why validation fails. It 
 
 Select `dev-plan`. Supply a `READY` plan tied to spec revision A: `AC-1` allows every authenticated user to export. `P1` implements that route and `P2` verifies its access behavior. A separate `P3` updates help wording for an unchanged `AC-2`. Revision B replaces `AC-1` with a requirement to reject users without the export role.
 
-The agent must mark the old plan `STALE`, identify the changed requirement and its impact on `P1`, `P2`, and their verification, then revise and revalidate before restoring readiness. `P3` may remain unchanged if it is independent. Fail if it follows the old permission behavior, edits the spec back to match the plan, or restores `READY` by changing only the status label.
+The agent must treat the old plan as `STALE` before relying on it, identify the changed requirement and its impact on `P1`, `P2`, and their verification, then revise and revalidate before restoring readiness. When artifact edits are authorized, record the invalidation and impact; a single bounded update may record those facts alongside the revised plan, check results, and final status. `P3` may remain unchanged if it is independent. Fail if it follows the old permission behavior, edits the spec back to match the plan, or restores `READY` by changing only the status label.
 
 Also run the trigger variants independently: keep the spec text fixed but change a binding memory constraint, or replace a material buffered-writer decision with a streaming-writer decision. In each variant, supply the previous source snapshot and the changed input. The same staleness and dependency checks apply.
 

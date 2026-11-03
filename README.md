@@ -123,6 +123,10 @@ bash scripts/validate-repo.sh
 bash scripts/test.sh
 ```
 
+## Behavioral calibration
+
+The [behavioral evaluation](evaluation/README.md) runs calibration cases against the real Codex CLI and records the evidence for independent grading.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

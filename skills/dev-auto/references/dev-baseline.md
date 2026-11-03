@@ -28,11 +28,13 @@ Choose checks that demonstrate the requested behavior on the final relevant stat
 
 Report exact commands and meaningful results. Distinguish static checks, unit tests, simulations, browsers/devices, staging, and production evidence. If a required check cannot run, state the missing proof and narrow the claim.
 
+Attribute findings or completed work to an independent agent only after a separate agent was successfully created or addressed and its result was received. An empty wait, a pending agent, or a role switch is not evidence of independent work. If delegation is unavailable or produces no result, state that limit and label your own assessment as a self-check.
+
 ## 5. Check plans before use
 
 Before any skill relies on a plan, read its status and compare its source request/spec, constraints, and material decisions with the current contract. A `READY` label alone does not prove freshness.
 
-If an input changed, treat the plan as `STALE` and identify affected sections and dependent steps/checks. Write that status and impact into the existing plan only when artifact edits are authorized; otherwise report them without editing files.
+If an input changed, treat the plan as `STALE` before relying on it and identify the changed input, affected sections, and dependent steps/checks. When artifact edits are authorized, record that invalidation and impact in the existing plan. If repair and revalidation finish in one bounded update, the same update may record the revised content, check results, and resulting status; a separate intermediate save is not required. If repair remains unfinished, leave the plan `STALE` or `BLOCKED`. Without artifact-edit authority, report the invalidation and impact without editing files.
 
 Do not rely on a `DRAFT`, `BLOCKED`, or `STALE` plan, or one whose freshness cannot be established, for dependent implementation or completion claims. Before relying on affected parts, revise them and revalidate acceptance coverage, dependencies, choices, and feasibility; restore `READY` only when those checks pass and blockers are resolved. Perform repairs only within existing authority; otherwise report the needed revision.
 
