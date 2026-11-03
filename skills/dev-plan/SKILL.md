@@ -34,6 +34,8 @@ Prefer one coherent approach that fits the existing architecture.
 
 Compare alternatives only when there is a real choice. Do not invent options to fill a template. For a material choice, use the optional `Decisions` section to record the decision, alternatives considered, criteria and rationale, and affected requirements or steps. Omit it when no choice needs a durable record.
 
+Before selecting the plan status, check each material implementation step against the repository and request. Identify the existing component and conventions it changes, or a new component the request supports creating. Identify the verification approach and material prerequisites. If an unknown could change the implementation decision or its feasibility, specify a bounded investigation and keep dependent work `BLOCKED`. Do not block solely because an exact filename or command is not yet determined.
+
 A useful plan names:
 
 - ordered changes and their repository targets;
@@ -85,9 +87,11 @@ Use `DRAFT` while the plan is incomplete and `BLOCKED` when a named decision or 
 
 ## Handle drift
 
-Before relying on an existing plan, compare its source spec or request, constraints, and material decisions with the current contract. When any of these changes, mark the plan `STALE`, identify the changed input and affected sections, and trace the impact through dependent steps and verification. Do not rely on stale parts, even if the plan was previously `READY`.
+Before relying on an existing plan, compare its source spec or request, constraints, and material decisions with the current contract. When any of these changes, treat the affected plan as `STALE` before relying on it, identify the changed input and affected sections, and trace the impact through dependent steps and verification. Do not rely on stale parts, even if the plan was previously `READY`.
 
-Revise affected sections and recheck coverage, dependencies, choices, and feasibility before assigning `DRAFT`, `READY`, or `BLOCKED`. If inspection shows a section is unaffected, record that conclusion rather than rewriting it. Independent, unaffected work may continue within existing authorization.
+Revise affected sections and record the outcome of the coverage, dependency, choice, and feasibility checks before dependent execution or restoring `READY`. If inspection shows a section is unaffected, record that conclusion rather than rewriting it. Preserve unaffected steps and their independence unless current evidence establishes a new dependency. Independent, unaffected work may continue within existing authorization.
+
+If unresolved discovery could change a material implementation decision or feasibility, do not mark the plan `READY`. A bounded investigation can proceed while dependent work remains `BLOCKED`.
 
 Keep decisions and drift notes in the existing plan or project convention. Do not create a separate `.clarity-protocol/` directory.
 
@@ -95,7 +99,7 @@ Keep decisions and drift notes in the existing plan or project convention. Do no
 
 For substantial or risky plans, use a separate reviewer when the runtime can provide one. Give the reviewer the source contract, draft plan, and relevant repository context.
 
-A self-check is useful but is not independent approval. Do not manufacture planner/architect/critic consensus inside one context.
+A self-check is useful but is not independent approval. Report independent review only when a separate reviewer actually returned a review result. Otherwise state that independent review was unavailable or incomplete and label any self-check accurately. Do not manufacture planner/architect/critic consensus inside one context.
 
 ## Handoff
 

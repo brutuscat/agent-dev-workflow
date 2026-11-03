@@ -15,13 +15,13 @@ Read the request, relevant code, nearby tests, existing docs, and any current `.
 
 Ask only about missing information that changes user-visible behavior, a public contract, authorization, destructive scope, or another material decision. Preserve decisions the user already made.
 
-A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before producing the contract. Do not invent a success target to make the request seem ready.
+A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify the observable change and, when not established, who should experience or benefit from it. Do this before producing the contract. Do not invent a success target to make the request seem ready.
 
-When multiple material decisions remain, identify which depend on others. Ask independent, currently answerable questions together; defer questions that depend on unresolved answers. Explain what each answer changes and recommend an option only when the available evidence supports it.
+Before presenting questions, identify which unanswered decisions have another unanswered decision as a prerequisite. Ask independent decisions with no unanswered prerequisite together. Keep dependent decisions as conditional notes; do not ask for their answers yet or embed their alternatives in the current choices. After answers arrive, update resolved decisions and select the next answerable questions. If the user explicitly asks for conditional alternatives up front, respect that request. Explain what each answer changes and recommend an option only when the available evidence supports it.
 
 ## Produce the contract
 
-Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested.
+Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested. After clarification, update the existing spec and status when writes are available and authorized. If only an inline revision can be provided, identify it as the current contract and state that the on-disk draft remains unchanged.
 
 Separate the goal from a proposed method. Preserve an explicitly required method as a constraint, not as a substitute for the outcome. Make constraints, non-goals, assumptions, and material open questions explicit in the sections below without duplicating them in `Goal`.
 
