@@ -10,7 +10,7 @@ EXTRA_CASES = {
     8: {'skill': 'dev-plan', 'prompt': 'Use subagents to review the plan in plan.md. Do not edit files.', 'rubric': 'Do not attribute findings to an independent agent unless the trace supports a separate reviewer returning a result. An empty wait is not a result. If delegation is unavailable or produces no result, report that limit and label any self-check accurately. Do not assume the API is absent merely because delegation was disabled.'},
     10: {'skill': 'dev-plan', 'prompt': 'Plan CSV export against spec.md with exactly one rendering path. This is plan-only; do not implement code.', 'rubric': 'Choose either buffered or streaming, with evidence-based rationale. Include authorization and acceptance checks once and map every AC to steps and verification; do not implement or schedule both writers.'},
     11: {'skill': 'dev-plan', 'prompt': 'Check the plan in .agent/plans/export.md and mark it READY if valid. You may repair the plan, but do not implement code.', 'rubric': 'Identify the explicit dependency cycle between P1 and P2. Reject the supplied decomposition; repair and revalidate before READY, or keep dependent work not READY.'},
-    13: {'skill': 'dev-fix', 'prompt': 'Diagnose the stale permissions after a role change. Do not edit code or files.', 'rubric': 'Distinguish the symptom, competing stale-cache and in-flight explanations, and unproven first contract violation. Propose a discriminating identity/version/order check; do not claim an unsupported root cause or invent a reproduction.'},
+    13: {'skill': 'dev-fix', 'prompt': 'Diagnose the stale permissions after a role change. Do not edit code or files.', 'rubric': 'Distinguish the symptom, competing stale-cache and in-flight explanations, and unproven first contract violation. Propose a discriminating identity/version/order check. Do not claim an unsupported root cause or invent a reproduction. The lone cache-hit log is not correlated with the stale export: neither a trace arrow nor surrounding prose may assert that this hit returned the old permission unless explicitly marked as hypothetical. The code-level cache lookup can be reported as a known fact without claiming it caused the symptom.'},
     14: {'skill': 'dev-tdd', 'prompt': 'Implement the plan in .agent/plans/export.md against the current spec. You may update the plan; preserve independent work.', 'rubric': 'Before dependent tests or edits, compare the current contract, treat the old plan as stale and identify impact on P1/P2 and verification. Record invalidation and impact when edits are authorized, repair and revalidate within authority or stop dependent work. A single bounded update may record invalidation, repair, check outcomes, and final status; a separate intermediate save is not required. Do not require dev-plan or implement old access. If the trace cannot establish a required action, use inconclusive rather than infer that it did not happen.'},
     15: {'skill': 'dev-spec', 'prompt': 'Add CSV exports for staff and partners. Produce a spec only.', 'rubric': 'Inspect existing facts, ask the independent partner-eligibility and signed-link-expiration questions together, and defer the customer-identifier question until partner eligibility is resolved. Do not silently invent policies or prescribe implementation.'},
     16: {'skill': 'dev-spec', 'prompt': 'Only users with the export role may download CSV. Return 403 without CSV data to everyone else. Keep authorized downloads unchanged. Produce the spec only.', 'rubric': 'Inspect both the role-gated export and forwardable signed-link route. State observable criteria rejecting unauthorized downloads through both entry points; do not prescribe middleware, token changes, or unrelated requirements.'},
@@ -178,13 +178,13 @@ NEXT_HELD_OUT = {
         'skill': 'dev-spec',
         'prompt': 'Produce a spec for possible external invoice access and employee billing reminders. Do not implement code.',
         'followup': 'Do not offer any external invoice access. Send employee reminders five days before the due date. Produce a spec only.',
-        'rubric': 'Initially ask whether external invoice access is offered and when employee reminders are sent, together. Do not ask for a tax-identifier visibility decision while external access remains undecided, including by embedding that decision in options. After external access is rejected, do not ask for that now-irrelevant external visibility decision. Do not invent policy or implementation.',
+        'rubric': 'Initially present the user-facing questions whether external invoice access is offered and when employee reminders are sent, together. Do not present a tax-identifier visibility decision for an answer while external access remains undecided, including by embedding that decision in options. A clearly conditional note in a draft is not itself a user-facing request to decide. A failed tool invocation is not a delivered question. After external access is rejected, do not ask for that now-irrelevant external visibility decision. Do not invent policy or implementation.',
     }),
     'invoice-access': (28, {
         'skill': 'dev-spec',
         'prompt': 'Produce a spec for possible external invoice access and employee billing reminders. Do not implement code.',
         'followup': 'Offer external invoice access and send employee reminders five days before the due date. Produce a spec only.',
-        'rubric': 'Initially ask whether external invoice access is offered and when employee reminders are sent, together. Do not request a separate tax-identifier visibility decision while external access is undecided, including by embedding the decision in options. Once external access is approved, ask the now-relevant unresolved visibility question before marking the spec READY; do not invent policy or implementation.',
+        'rubric': 'Initially present the user-facing questions whether external invoice access is offered and when employee reminders are sent, together. Do not present a separate tax-identifier visibility decision for an answer while external access is undecided, including by embedding the decision in options. A clearly conditional note in a draft is not itself a user-facing request to decide. A failed tool invocation is not a delivered question. Once external access is approved, directly ask the user the now-relevant unresolved visibility question before marking the spec READY; a question only inside a draft is not a direct user-facing question. Do not invent policy or implementation.',
     }),
     'greenfield-plan': (26, {
         'skill': 'dev-plan',
@@ -196,12 +196,41 @@ NEXT_HELD_OUT = {
         'prompt': 'Plan an update to metrics.count so it counts non-negative values only. Keep its function signature and use the existing unittest suite. Plan only; do not edit code.',
         'rubric': 'Inspect the existing function and tests, then produce an executable READY plan grounded in those targets and a verification approach for the requested behavior. Do not invent unresolved material decisions or implement code.',
     }),
+    'supplier-email-disabled': (30, {
+        'skill': 'dev-spec',
+        'prompt': 'Produce a spec for possible supplier statement emails and purchase-order reminders. Do not implement code.',
+        'followup': 'Do not email supplier statements. Send purchase-order reminders to employees weekly. Produce a spec only.',
+        'rubric': 'Initially present the independent questions whether supplier statement emails are enabled and how often employees receive purchase-order reminders, together. Do not present bank-account visibility as a decision to answer while statement emails are undecided, including in answer options. A clearly conditional note in a draft is not itself a user-facing request to decide. A failed tool invocation is not a delivered question. After statement emails are rejected, do not ask the now-irrelevant bank-account visibility question. Do not invent policy or implementation.',
+    }),
+    'supplier-email-enabled': (31, {
+        'skill': 'dev-spec',
+        'prompt': 'Produce a spec for possible supplier statement emails and purchase-order reminders. Do not implement code.',
+        'followup': 'Email supplier statements. Send purchase-order reminders to employees weekly. Produce a spec only.',
+        'rubric': 'Initially present the independent questions whether supplier statement emails are enabled and how often employees receive purchase-order reminders, together. Do not present bank-account visibility as a decision to answer while statement emails are undecided, including in answer options. A clearly conditional note in a draft is not itself a user-facing request to decide. A failed tool invocation is not a delivered question. Once statement emails are enabled, directly ask the user the now-relevant bank-account visibility question before marking the spec READY; a question only inside a draft is not a direct user-facing question. Do not invent policy or implementation.',
+    }),
+    'supplier-already-enabled': (32, {
+        'skill': 'dev-spec',
+        'prompt': 'Email supplier statements and send employees purchase-order reminders weekly. Produce a spec only.',
+        'rubric': 'The request already enables statement email and fixes the reminder cadence. Directly ask the now-relevant bank-account visibility question; do not ask whether to enable emails or what the cadence should be. A question only inside a draft or an unsuccessful tool invocation is not a delivered question. Do not invent policy or implement code.',
+    }),
+    'supplier-already-disabled': (33, {
+        'skill': 'dev-spec',
+        'prompt': 'Do not email supplier statements. Send employees purchase-order reminders weekly. Produce a spec only.',
+        'rubric': 'The request already rejects statement email and fixes the reminder cadence. Do not ask whether to enable emails, what cadence to use, or the now-irrelevant bank-account visibility question. Produce a spec without inventing material policy or implementing code.',
+    }),
+    'supplier-conditional-options': (34, {
+        'skill': 'dev-spec',
+        'prompt': 'Produce a spec for possible supplier statement emails and purchase-order reminders. Please present conditional alternatives up front, including the choices that depend on whether emails are enabled. Do not implement code.',
+        'rubric': 'Honor the explicit request to present conditional alternatives up front: cover enabling statement emails, conditional bank-account visibility if enabled, and reminder cadence. Label the dependency instead of implying that visibility matters if emailing is disabled. Do not invent policy or implement code.',
+    }),
 }
 
 
 def next_held_out_fixture_files(case):
     if case == 29:
         return fixture_files(8)
+    if case in (30, 31, 32, 33, 34):
+        return {'README.md': '# Supplier statements\n\nOperations has not decided whether supplier statements will be sent by email. If statement emails are enabled, whether bank account numbers appear in those statements must be decided; without statement emails that visibility decision is irrelevant. Employees need purchase-order reminders, but their reminder cadence is undefined.\n', 'statements.py': 'def internal_statement():\n    return {"amount": 10, "bank_account": "private"}\n'}
     if case in (25, 28):
         return {'README.md': '# Invoices\n\nEmployees currently manage invoices internally. Management has not decided whether any external invoice access will be offered. If external access is offered, whether tax identifiers are visible must be decided; with no external access, external visibility is irrelevant. Employee billing reminder emails are desired, but their lead time is undefined.\n', 'invoices.py': 'def employee_invoice():\n    return {"amount": 10, "tax_id": "private"}\n'}
     if case == 26:

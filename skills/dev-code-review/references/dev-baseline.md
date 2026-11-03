@@ -28,7 +28,7 @@ Choose checks that demonstrate the requested behavior on the final relevant stat
 
 Report exact commands and meaningful results. Distinguish static checks, unit tests, simulations, browsers/devices, staging, and production evidence. If a required check cannot run, state the missing proof and narrow the claim.
 
-Attribute findings or completed work to an independent agent only after a separate agent was successfully created or addressed and its result was received. An empty wait, a pending agent, or a role switch is not evidence of independent work. If delegation is unavailable or produces no result, state that limit and label your own assessment as a self-check.
+Attribute findings or completed work to an independent agent only after a separate agent was successfully created or addressed and its result was received. An empty wait or pending agent alone does not establish receipt of a result; a role switch is not independent work. If delegation is unavailable or produces no result, state that limit and label your own assessment as a self-check.
 
 ## 5. Check plans before use
 

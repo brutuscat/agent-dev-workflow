@@ -15,9 +15,9 @@ Read the request, relevant code, nearby tests, existing docs, and any current `.
 
 Ask only about missing information that changes user-visible behavior, a public contract, authorization, destructive scope, or another material decision. Preserve decisions the user already made.
 
-A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify the observable change and, when not established, who should experience or benefit from it. Do this before producing the contract. Do not invent a success target to make the request seem ready.
+A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify the observable change, its desired effect, and, when relevant and not established, who should experience or benefit from it. Do this before producing the contract. Do not invent a success target to make the request seem ready.
 
-Before presenting questions, identify which unanswered decisions have another unanswered decision as a prerequisite. Ask independent decisions with no unanswered prerequisite together. Keep dependent decisions as conditional notes; do not ask for their answers yet or embed their alternatives in the current choices. After answers arrive, update resolved decisions and select the next answerable questions. If the user explicitly asks for conditional alternatives up front, respect that request. Explain what each answer changes and recommend an option only when the available evidence supports it.
+Before asking, separate answerable decisions from decisions whose relevance or options depend on an unanswered decision. Ask the answerable material decisions together. In chat and drafts, record deferred decisions as conditional notes naming their prerequisite; do not request their answers yet or embed their alternatives in the current choices. After each answer, remove decisions made irrelevant and directly ask newly answerable material questions. Listing an open question in a draft does not replace asking the user. If a question tool is unavailable or fails, ask in plain text. If the user explicitly asks for conditional alternatives up front, respect that request. Explain what each answer changes and recommend an option only when the available evidence supports it.
 
 ## Produce the contract
 
@@ -50,14 +50,16 @@ Keep the artifact small:
 - AC-2: <observable outcome>
 
 ## Open questions
-<Only unresolved material decisions; omit when empty>
+<Only unresolved material decisions, including conditional notes; omit when empty>
 ```
 
 Use `READY` when material behavior and scope are resolved. Use `BLOCKED` when a named decision or missing fact prevents dependent work. Otherwise use `DRAFT`.
 
 Acceptance criteria prove the goal is achieved within its constraints. Describe observable outcomes and how to recognize success, not implementation steps.
 
-For non-trivial behavior changes, check realistic boundary or failure scenarios for missing observable behavior before marking the spec `READY`. Use the request and repository evidence, not speculation. Cover established outcomes in acceptance criteria; record unresolved material decisions as open questions and apply the status rules above.
+For non-trivial behavior changes, check realistic boundary or failure scenarios for missing observable behavior before marking the spec `READY`. Use the request and repository evidence, not speculation. Cover established outcomes in acceptance criteria; record unresolved material decisions using the question and deferral rules above, and apply the status rules above.
+
+Do not turn an unconfirmed material boundary behavior into an acceptance criterion merely by labeling it an assumption. Ask when the missing decision changes the contract.
 
 ## Boundaries
 

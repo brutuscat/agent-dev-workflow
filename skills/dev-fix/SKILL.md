@@ -40,7 +40,7 @@ symptom -> failure mode -> first contract violation -> supported root cause
 
 The symptom is what was observed; the failure mode is how behavior breaks; the first contract violation is the earliest supported divergence on the actual path; the root cause explains why that divergence occurs. These arrows show the investigation order, not cause-to-effect direction.
 
-For every link, cite evidence or state the mechanism that connects it. Mark uncertain links as hypotheses; a plausible mechanism or a nearby code change alone does not establish root cause. Before claiming a cause across an uncertain link, run a discriminating check and explain which observation supports or rules out the hypothesis.
+Cite evidence for every asserted link. Where only a plausible mechanism connects observations, label that link as a hypothesis, including intermediate links when the overall root cause remains unproven. A plausible mechanism or a nearby code change alone does not establish root cause. Before claiming a cause across an uncertain link, run a discriminating check and explain which observation supports or rules out the hypothesis.
 
 If a necessary check cannot run or is inconclusive, report the candidate cause, uncertain link, and missing evidence. Do not label the investigation `DIAGNOSED` or the candidate a supported root cause; use `BLOCKED` when that gap prevents progress. Small, direct bugs do not need a formal chain artifact.
 

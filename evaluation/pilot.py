@@ -69,7 +69,7 @@ def create_fixture(case, repo):
         common.update({'README.md': '# Payment webhook integration\n\nProduction routes payment.completed webhooks through dispatch. The downstream fulfillment service grants customers access only after the handler marks the paid order as complete. If those events are not handled, paying customers do not receive access.\n', 'registry.py': 'from handlers import existing_handler\n\ndef registerHandlers():\n    return {"existing": existing_handler}\n\ndef dispatch(event):\n    return registerHandlers()[event["type"]](event)\n', 'handlers.py': 'def existing_handler(event):\n    return "existing"\n', 'test_handlers.py': 'from handlers import existing_handler\n\ndef test_existing():\n    assert existing_handler({}) == "existing"\n'})
     elif case == 24:
         common = full_cases.held_out_fixture_files()
-    elif case in (25, 26, 27, 28, 29):
+    elif case in (25, 26, 27, 28, 29, 30, 31, 32, 33, 34):
         common = full_cases.next_held_out_fixture_files(case)
     elif case in full_cases.EXTRA_CASES:
         common = full_cases.fixture_files(case)
@@ -116,6 +116,9 @@ def validate_fixture(case, repo):
     elif case in (25, 28):
         text = (repo / 'README.md').read_text()
         check('not decided whether any external invoice access' in text and 'external visibility is irrelevant' in text and 'lead time is undefined' in text, 'invoice fixture is incomplete')
+    elif case in (30, 31, 32, 33, 34):
+        text = (repo / 'README.md').read_text()
+        check('not decided whether supplier statements will be sent by email' in text and 'without statement emails that visibility decision is irrelevant' in text and 'reminder cadence is undefined' in text, 'supplier fixture is incomplete')
     elif case == 26:
         check('new component' in (repo / 'README.md').read_text(), 'greenfield fixture is incomplete')
     elif case == 29:
@@ -152,6 +155,18 @@ def snapshot(repo):
         elif path.is_file():
             files[str(rel)] = hashlib.sha256(path.read_bytes()).hexdigest()
     return {'head': git(repo, 'rev-parse', 'HEAD').strip(), 'status': git(repo, 'status', '--porcelain=v1', '--untracked-files=all'), 'index_entries': git(repo, 'ls-files', '--stage'), 'index_diff': redact_auth(git(repo, 'diff', '--cached', '--binary'), repo.parent / 'codex-home' / 'auth.json'), 'worktree_diff': redact_auth(git(repo, 'diff', '--binary'), repo.parent / 'codex-home' / 'auth.json'), 'files': files}
+
+
+def fixture_text_files(repo, auth_path):
+    files = {}
+    for path in sorted(repo.rglob('*')):
+        rel = path.relative_to(repo)
+        if not path.is_symlink() and path.is_file() and '.git' not in rel.parts and '__pycache__' not in rel.parts:
+            try:
+                files[str(rel)] = blind_text(redact_auth(path.read_text(), auth_path))
+            except (UnicodeDecodeError, OSError):
+                pass
+    return files
 
 
 def mechanical_checks(case, before, after):
@@ -278,7 +293,18 @@ def session_provenance(home, root_session_id):
             payload = record.get('payload', {})
             if record.get('type') == 'event_msg' and payload.get('type') == 'task_complete':
                 completions.append({'timestamp': record.get('timestamp'), 'completed_at': payload.get('completed_at'), 'turn_id': payload.get('turn_id'), 'root_turn_id': payload.get('root_turn_id'), 'result': payload.get('last_agent_message')})
-        children.append({'session_id': ident, 'parent_session_id': spawn.get('parent_thread_id'), 'agent_path': spawn.get('agent_path'), 'has_completed_result': bool(completions), 'completions': completions})
+        messages = []
+        for record in records:
+            payload = record.get('payload', {})
+            if record.get('type') == 'response_item' and payload.get('type') == 'function_call' and payload.get('name') == 'send_message':
+                try:
+                    args = json.loads(payload.get('arguments', '{}'))
+                except (ValueError, TypeError):
+                    continue
+                if not isinstance(args, dict):
+                    continue
+                messages.append({'timestamp': record.get('timestamp'), 'call_id': payload.get('call_id'), 'target': args.get('target'), 'message': args.get('message')})
+        children.append({'session_id': ident, 'parent_session_id': spawn.get('parent_thread_id'), 'agent_path': spawn.get('agent_path'), 'has_completed_result': bool(completions), 'completions': completions, 'outgoing_messages': messages})
     parent_by_id = {child['session_id']: child['parent_session_id'] for child in children}
     for child in children:
         ancestor = child['parent_session_id']
@@ -316,7 +342,7 @@ def session_provenance(home, root_session_id):
                     pass
             known[payload['call_id']]['result'] = output
             known[payload['call_id']]['result_timestamp'] = record.get('timestamp')
-    data = {'root_session_id': root_session_id, 'root_found': root_found, 'children': children, 'collaboration_calls': calls, 'parent_messages': claims, 'note': 'A child completion proves that a distinct session returned a result, not that a later follow-up completed. Compare routing, parent messages and timestamps. An empty CLI wait event does not establish absence of a reviewer or prove parent receipt.'}
+    data = {'root_session_id': root_session_id, 'root_found': root_found, 'children': children, 'collaboration_calls': calls, 'parent_messages': claims, 'note': 'Child outgoing messages record attempted sends, not proof of receipt. A child completion proves that a distinct session returned a result, not that a later follow-up completed. Compare routing, parent messages and timestamps. An empty CLI wait event does not establish absence of a reviewer or prove parent receipt.'}
     return json.loads(redact_auth(json.dumps(data), home / 'auth.json'))
 
 
@@ -607,6 +633,10 @@ def run_case(case, condition, repeat, output, timeout, model=MODEL, effort='high
             error = 'runtime did not record the root session id'
         reported = runtime_metadata(home, thread)
         followup = CLARIFICATION if case == 9 else CASES[case].get('followup')
+        first_turn_state = snapshot(repo)
+        first_turn_files = fixture_text_files(repo, home / 'auth.json')
+        dump(out / 'turn1-state.json', first_turn_state)
+        dump(out / 'turn1-files.json', first_turn_files)
         if followup and not error:
             if not thread:
                 error = 'missing session id for clarification'
@@ -631,14 +661,9 @@ def run_case(case, condition, repeat, output, timeout, model=MODEL, effort='high
         after = snapshot(repo)
         mechanical = mechanical_checks(case, before, after) + provenance_checks(case, provenance)
         dump(out / 'before.json', before); dump(out / 'after.json', after)
-        evidence = {'request': CASES[case]['prompt'], 'initial_state': blind_text(json.dumps(before)), 'final_state': blind_text(json.dumps(after)), 'session_provenance': blind_text(json.dumps(provenance))}
-        for path in sorted(repo.rglob('*')):
-            rel = path.relative_to(repo)
-            if not path.is_symlink() and path.is_file() and '.git' not in rel.parts and '__pycache__' not in rel.parts:
-                try:
-                    evidence['file:' + str(rel)] = blind_text(redact_auth(path.read_text(), home / 'auth.json'))
-                except (UnicodeDecodeError, OSError):
-                    pass
+        evidence = {'request': CASES[case]['prompt'], 'initial_state': blind_text(json.dumps(before)), 'turn1_state': blind_text(json.dumps(first_turn_state)), 'final_state': blind_text(json.dumps(after)), 'session_provenance': blind_text(json.dumps(provenance))}
+        evidence.update({'turn1:file:' + name: value for name, value in first_turn_files.items()})
+        evidence.update({'file:' + name: value for name, value in fixture_text_files(repo, home / 'auth.json').items()})
         if followup:
             evidence['clarification'] = followup
         for i, turn in enumerate(turns, 1):

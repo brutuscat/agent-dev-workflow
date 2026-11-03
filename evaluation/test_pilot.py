@@ -49,10 +49,18 @@ class PilotTests(unittest.TestCase):
 
     def test_new_held_out_fixtures_have_decidable_contracts(self):
         with tempfile.TemporaryDirectory() as root:
-            for case in (25, 26, 27, 28, 29):
+            for case in (25, 26, 27, 28, 29, 30, 31, 32, 33, 34):
                 repo = Path(root) / str(case)
                 pilot.create_fixture(case, repo)
                 self.assertEqual(pilot.validate_fixture(case, repo), [], case)
+
+    def test_supplier_followups_share_fixture_but_choose_opposite_branches(self):
+        disabled = pilot.full_cases.NEXT_HELD_OUT['supplier-email-disabled'][1]
+        enabled = pilot.full_cases.NEXT_HELD_OUT['supplier-email-enabled'][1]
+        self.assertEqual(disabled['prompt'], enabled['prompt'])
+        self.assertEqual(pilot.full_cases.next_held_out_fixture_files(30), pilot.full_cases.next_held_out_fixture_files(31))
+        self.assertIn('Do not email', disabled['followup'])
+        self.assertTrue(enabled['followup'].startswith('Email supplier statements.'))
 
     def test_verification_fixture_checks_real_export_behavior(self):
         with tempfile.TemporaryDirectory() as root:
@@ -254,12 +262,16 @@ class PilotTests(unittest.TestCase):
             child_records = [
                 {'type': 'session_meta', 'payload': {'id': 'child-1', 'source': {'subagent': {'thread_spawn': {'parent_thread_id': 'root-1', 'agent_path': '/root/reviewer'}}}}},
                 {'type': 'event_msg', 'timestamp': '2026-01-01T00:01:00Z', 'payload': {'type': 'task_complete', 'last_agent_message': secret}},
+                {'type': 'response_item', 'timestamp': '2026-01-01T00:01:30Z', 'payload': {'type': 'function_call', 'name': 'send_message', 'call_id': 'child-send', 'arguments': json.dumps({'target': '/root', 'message': secret})}},
             ]
             for name, records in (('root.jsonl', root_records), ('child.jsonl', child_records)):
                 (sessions / name).write_text(''.join(json.dumps(r) + '\n' for r in records))
             provenance = pilot.session_provenance(home, 'root-1')
             self.assertEqual(provenance['collaboration_calls'][0]['targets']['target'], '/root/reviewer')
             self.assertEqual(provenance['collaboration_calls'][0]['timestamp'], '2026-01-01T00:02:00Z')
+            self.assertEqual(provenance['children'][0]['outgoing_messages'][0]['target'], '/root')
+            self.assertEqual(provenance['children'][0]['outgoing_messages'][0]['timestamp'], '2026-01-01T00:01:30Z')
+            self.assertIn('attempted sends', provenance['note'])
             self.assertNotIn(secret, json.dumps(provenance))
 
     def test_provenance_marks_unrelated_child_and_retains_order(self):
@@ -381,6 +393,7 @@ class PilotTests(unittest.TestCase):
             return home
         def fake_cli(args, cwd, env, timeout, input_text=None):
             commands.append(args)
+            (cwd / 'draft.md').write_text('first turn' if len(commands) == 1 else 'second turn')
             events = [{'type': 'thread.started', 'thread_id': 'session'}, {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'What outcome do you want?'}}, {'type': 'turn.completed'}]
             return {'exit_code': 0, 'timeout': False, 'stdout': ''.join(json.dumps(e) + '\n' for e in events), 'stderr': ''}
         def fake_grade(case, evidence, model, home, cwd, out, timeout, index):
@@ -395,6 +408,8 @@ class PilotTests(unittest.TestCase):
             self.assertIn('sandbox_mode=\"workspace-write\"', commands[1])
             self.assertEqual(len(captured), 2)
             self.assertIn('clarification', captured[0])
+            self.assertEqual(captured[0]['turn1:file:draft.md'], 'first turn')
+            self.assertEqual(captured[0]['file:draft.md'], 'second turn')
             self.assertNotIn('dev-spec', json.dumps(captured[0]))
 
     def test_fake_review_modification_fails(self):

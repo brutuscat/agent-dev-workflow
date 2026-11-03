@@ -34,7 +34,7 @@ Prefer one coherent approach that fits the existing architecture.
 
 Compare alternatives only when there is a real choice. Do not invent options to fill a template. For a material choice, use the optional `Decisions` section to record the decision, alternatives considered, criteria and rationale, and affected requirements or steps. Omit it when no choice needs a durable record.
 
-Before selecting the plan status, check each material implementation step against the repository and request. Identify the existing component and conventions it changes, or a new component the request supports creating. Identify the verification approach and material prerequisites. If an unknown could change the implementation decision or its feasibility, specify a bounded investigation and keep dependent work `BLOCKED`. Do not block solely because an exact filename or command is not yet determined.
+Before selecting the plan status, check each material implementation step against the repository and request. Identify the existing component and conventions it changes, or a new component the request supports creating. Identify the verification approach and material prerequisites. If an unknown could change a material implementation decision or feasibility, specify a bounded investigation and keep dependent work blocked. Do not block solely because an exact filename or command is not yet determined.
 
 A useful plan names:
 
@@ -99,7 +99,7 @@ Keep decisions and drift notes in the existing plan or project convention. Do no
 
 For substantial or risky plans, use a separate reviewer when the runtime can provide one. Give the reviewer the source contract, draft plan, and relevant repository context.
 
-A self-check is useful but is not independent approval. Report independent review only when a separate reviewer actually returned a review result. Otherwise state that independent review was unavailable or incomplete and label any self-check accurately. Do not manufacture planner/architect/critic consensus inside one context.
+A self-check is useful but is not independent approval. Report independent review only after receiving a review result from a separate reviewer. When independent review is requested or needed but unavailable or incomplete, state that limit. Label any self-check accurately. Do not manufacture planner/architect/critic consensus inside one context.
 
 ## Handoff
 
