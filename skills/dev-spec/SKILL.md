@@ -15,13 +15,17 @@ Read the request, relevant code, nearby tests, existing docs, and any current `.
 
 Ask only about missing information that changes user-visible behavior, a public contract, authorization, destructive scope, or another material decision. Preserve decisions the user already made.
 
-A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify what must change and why before producing the contract. Do not invent a success target to make the request seem ready.
+A clear request does not need an interview. If the intended outcome is still vague after inspection, clarify the observable change, its desired effect, and, when relevant and not established, who should experience or benefit from it. Do this before producing the contract. Do not invent a success target to make the request seem ready.
 
-When multiple material decisions remain, identify which depend on others. Ask independent, currently answerable questions together; defer questions that depend on unresolved answers. Explain what each answer changes and recommend an option only when the available evidence supports it.
+Group related questions when doing so helps the user. A dependent decision may be asked conditionally with its prerequisite when that is useful and the dependency is clear; otherwise defer it. After each answer, remove decisions made irrelevant and directly ask any newly relevant material questions that need user input. Listing an open question in a draft does not replace asking the user. If a question tool is unavailable or fails, ask in plain text. Honor an explicit request for conditional alternatives. Explain what each answer changes and ground recommendations in available evidence or a stated assumption.
 
 ## Produce the contract
 
-Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested.
+Use an existing project convention when one exists. Otherwise write `.agent/specs/<slug>.md`. Use chat-only output when requested. After clarification, update the existing spec and status when writes are available and authorized. If only an inline revision can be provided, identify it as the current contract and state that the on-disk draft remains unchanged.
+
+When a useful draft can be written, record settled decisions while asking about unresolved material details. Leave dependent criteria unresolved and use the appropriate status. If the missing outcome or facts would make a draft misleading or unusable, ask and defer the affected work.
+
+For new exposure of private or personal data, default to withholding it unless an established policy or an authorized decision permits it. Preserve established authorized behavior and requested compatibility. Do not invent ownership or grant permissions: if access cannot be established, stop the affected access work and ask.
 
 Separate the goal from a proposed method. Preserve an explicitly required method as a constraint, not as a substitute for the outcome. Make constraints, non-goals, assumptions, and material open questions explicit in the sections below without duplicating them in `Goal`.
 
@@ -50,14 +54,18 @@ Keep the artifact small:
 - AC-2: <observable outcome>
 
 ## Open questions
-<Only unresolved material decisions; omit when empty>
+<Only unresolved material decisions, including conditional notes; omit when empty>
 ```
 
 Use `READY` when material behavior and scope are resolved. Use `BLOCKED` when a named decision or missing fact prevents dependent work. Otherwise use `DRAFT`.
 
 Acceptance criteria prove the goal is achieved within its constraints. Describe observable outcomes and how to recognize success, not implementation steps.
 
-For non-trivial behavior changes, check realistic boundary or failure scenarios for missing observable behavior before marking the spec `READY`. Use the request and repository evidence, not speculation. Cover established outcomes in acceptance criteria; record unresolved material decisions as open questions and apply the status rules above.
+Before marking the spec `READY`, check that acceptance criteria do not require incompatible outcomes when their conditions overlap.
+
+For non-trivial behavior changes, check realistic boundary or failure scenarios for missing observable behavior before marking the spec `READY`. Use the request and repository evidence, not speculation. Cover established outcomes in acceptance criteria; record unresolved material decisions using the question and deferral rules above, and apply the status rules above.
+
+Do not turn an unconfirmed material boundary behavior into an acceptance criterion merely by labeling it an assumption. Use the privacy default above where applicable; otherwise ask when the missing decision changes the contract.
 
 ## Boundaries
 
