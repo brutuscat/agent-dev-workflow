@@ -25,7 +25,7 @@ Use an existing project convention when one exists. Otherwise write `.agent/spec
 
 When a useful draft can be written, record settled decisions while asking about unresolved material details. Leave dependent criteria unresolved and use the appropriate status. If the missing outcome or facts would make a draft misleading or unusable, ask and defer the affected work.
 
-For new exposure of private or personal data, default to withholding it unless an established policy authorizes it. Preserve established authorized behavior and requested compatibility. Do not invent ownership or grant permissions: if access cannot be established, stop the affected access work and ask.
+For new exposure of private or personal data, default to withholding it unless an established policy or an authorized decision permits it. Preserve established authorized behavior and requested compatibility. Do not invent ownership or grant permissions: if access cannot be established, stop the affected access work and ask.
 
 Separate the goal from a proposed method. Preserve an explicitly required method as a constraint, not as a substitute for the outcome. Make constraints, non-goals, assumptions, and material open questions explicit in the sections below without duplicating them in `Goal`.
 
